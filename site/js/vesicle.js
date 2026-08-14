@@ -311,7 +311,7 @@ export class Vesicle {
     if (v.membraneEnergy < this.cfg.maintenanceCost * 1.5) return;
 
     const growth = this.cfg.growthRate * dt * monomerFactor
-      * (this.chemoton && v.interior.size > 0 ? 1.1 : 1);
+      * (this.chemoton && v.interior.size > 0 ? 1.15 : 1);
     v.radius = Math.min(this.cfg.radiusMax, v.radius + growth);
 
     if (this.chemoton && v.chemoton && v.interior.size === 0) {

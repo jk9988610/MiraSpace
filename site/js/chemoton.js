@@ -102,7 +102,7 @@ export class Chemoton {
     }
     if (attempts > 0) {
       const successRate = successes / Math.max(1e-6, window);
-      const norm = this.cfg.geneticNormalize ?? 0.025;
+      const norm = this.cfg.geneticNormalize ?? 0.018;
       c.geneticActivity = clamp01(successRate / norm);
     } else {
       c.geneticActivity = Math.max(0, c.geneticActivity * 0.98);
@@ -164,7 +164,7 @@ export class Chemoton {
     const coherenceMin = this.cfg.coherenceMinTicks ?? 90;
     let effectiveThreshold = radiusThreshold;
     if (c.coherenceTicks >= coherenceMin && v.interior?.size > 0) {
-      effectiveThreshold *= 0.88;
+      effectiveThreshold *= 0.82;
     }
     return v.radius >= effectiveThreshold
       && this.fitness(v) >= (this.cfg.fissionFitnessMin ?? 0.4)
