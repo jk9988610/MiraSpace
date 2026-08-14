@@ -25,6 +25,8 @@ export class Vesicle {
     this._nextLineageId = 1;
     this._nextCompartmentId = 1;
     this._totalFissions = 0;
+    /** @type {import('./colony.js').Colony | null} */
+    this.colony = null;
 
     void rng;
   }
@@ -181,6 +183,8 @@ export class Vesicle {
       lineageId,
       interior: new Set(),
       localPool: 0,
+      colonyId: null,
+      links: [],
     };
     if (this.chemoton) {
       v.chemoton = this.chemoton.createState(rng);
@@ -394,6 +398,9 @@ export class Vesicle {
 
     this.list.push(childA, childB);
     v.interior.clear();
+    if (this.colony) {
+      this.colony.onFission(v, childA, childB, this);
+    }
     this.list = this.list.filter((item) => item.id !== v.id);
 
     events.fissions += 1;
@@ -408,6 +415,10 @@ export class Vesicle {
    */
   _lysis(v, replicator, events) {
     if (!v) return;
+
+    if (this.colony) {
+      this.colony.onMemberLysis(v, this);
+    }
 
     if (this.chemoton) {
       this.chemoton.registerDeath(v, v.age);

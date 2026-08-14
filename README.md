@@ -1,6 +1,6 @@
 # MiraSpace
 
-米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**S4 整合细胞单元（chemoton）**。
+米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**S5 多细胞性（colony）**。
 
 ## 在线访问
 
@@ -10,6 +10,7 @@ https://jk9988610.github.io/MiraSpace/
 - S2 复制子：`?seed=42&preset=stage2-default`
 - S3 原细胞：`?seed=42&preset=stage3-default`
 - S4 化学子：`?seed=42&preset=stage4-default`
+- S5 多细胞：`?seed=42&preset=stage5-default`
 
 ## 本地运行
 
@@ -19,6 +20,7 @@ python3 -m http.server 8080
 # S1: http://localhost:8080/?seed=42
 # S2: http://localhost:8080/?seed=42&preset=stage2-default
 # S4: http://localhost:8080/?seed=42&preset=stage4-default
+# S5: http://localhost:8080/?seed=42&preset=stage5-default
 ```
 
 ## 功能
@@ -31,6 +33,7 @@ python3 -m http.server 8080
 | **S2** | strand 复制子（成核/模板复制/突变）、四项 S2 指标 HUD |
 | **S3** | vesicle 膜（成核/吞入/生长/分裂）、四项 S3 指标 HUD；裸 strand 仍复制 |
 | **S4** | chemoton 三子耦合（代谢/遗传/膜）、fitness 门控分裂、四项 S4 指标 HUD |
+| **S5** | colony 分裂建链、role 涌现、flux 交换、四项 S5 指标 HUD；v1 路线图闭合 |
 
 ## S1 指标
 
@@ -62,6 +65,15 @@ python3 -m http.server 8080
 - `chemotonCount` — 满足 coherence 的 vesicle 数（观测）
 
 门槛见 `site/data/presets/stage4-default.json` 中 `metricsThresholdsS4`。
+
+## S5 指标
+
+- `multicellularPersistence` — colony 平均寿命 / 单 cell chemoton 平均寿命
+- `divisionOfLabor` — 含 ≥2 种 role 的 colony 占比
+- `developmentalPattern` — colony 链接空间自相关 vs 随机
+- `colonyCount` — 当前 colony 数（仅观测）
+
+门槛见 `site/data/presets/stage5-default.json` 中 `metricsThresholdsS5`。
 
 > S3 结案门 sustained 达标：维护者跑 `--acceptance`，README 标「S3 结案待定」。
 
@@ -127,11 +139,12 @@ node scripts/s3-headless-test.mjs --acceptance
 - `?preset=stage2-default` — 加载 S2 preset（支持 `extends` 合并）
 - `?preset=stage3-default` — 加载 S3 preset（extends stage2）
 - `?preset=stage4-default` — 加载 S4 preset（extends stage3，chemoton 耦合）
+- `?preset=stage5-default` — 加载 S5 preset（extends stage4，colony 链接）
 
 ## 约束
 
 - Vanilla JS + Canvas 2D，零构建
-- **禁止** dimer 升级 strand、脚本 spawn 复制子/vesicle、RNA/DNA 命名
+- **禁止** dimer 升级 strand、脚本 spawn 复制子/vesicle/**colony**、RNA/DNA 命名
 - **禁止** 按 RNA→DNA→细胞 线性排期；**禁止** 关闭裸 strand 复制
 
 ## 目录结构
@@ -142,6 +155,7 @@ site/
 │   ├── replicator.js      # S2 strand
 │   ├── vesicle.js         # S3 膜 compartment
 │   ├── chemoton.js        # S4 三子耦合
+│   ├── colony.js          # S5 colony 链接与分工
 │   ├── preset.js
 │   └── ...
 └── data/presets/
@@ -150,9 +164,11 @@ site/
     ├── stage2-error-threshold.json
     └── stage3-default.json
     └── stage4-default.json
+    └── stage5-default.json
 scripts/
 ├── run-suite.mjs
 ├── smoke-test.mjs
+├── s5-headless-test.mjs
 ├── s4-headless-test.mjs
 ├── test-report.mjs        # Markdown 报告
 ├── test-utils.mjs
@@ -165,6 +181,7 @@ scripts/
 ## 文档（Talk）
 
 - [测试分层与报告规范](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-测试分层与报告规范.md)
+- [S5 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S5-多细胞性.md)
 - [S4 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S4-整合细胞单元.md)
 - [S3 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S3-个体化与原细胞.md)
 - [S2 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S2-达尔文阈值.md)

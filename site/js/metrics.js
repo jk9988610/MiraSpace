@@ -11,8 +11,9 @@ export class Metrics {
    * @param {import('./replicator.js').Replicator | null} [replicator]
    * @param {import('./vesicle.js').Vesicle | null} [vesicle]
    * @param {import('./chemoton.js').Chemoton | null} [chemoton]
+   * @param {import('./colony.js').Colony | null} [colony]
    */
-  constructor(preset, initialCounts, replicator = null, vesicle = null, chemoton = null) {
+  constructor(preset, initialCounts, replicator = null, vesicle = null, chemoton = null, colony = null) {
     this.preset = preset;
     this.thresholds = preset.metricsThresholds;
     this.updateEvery = this.thresholds.updateEveryTicks ?? 10;
@@ -74,6 +75,18 @@ export class Metrics {
     this.chemotonCoherenceAvg = 0;
     this.lineagePersistenceAvg = 0;
     this._historyS4 = [];
+
+    this.s5Enabled = !!preset.colony;
+    this.colony = colony;
+    this.s5Thresholds = preset.metricsThresholdsS5 ?? null;
+    this.multicellularPersistence = 0;
+    this.divisionOfLabor = 0;
+    this.developmentalPattern = 0;
+    this.colonyCount = 0;
+    this.multicellularPersistenceAvg = 0;
+    this.divisionOfLaborAvg = 0;
+    this.developmentalPatternAvg = 0;
+    this._historyS5 = [];
   }
 
   /**
@@ -86,8 +99,9 @@ export class Metrics {
    * @param {import('./vesicle.js').Vesicle | null} [vesicle]
    * @param {object | null} [vesicleEvents]
    * @param {import('./chemoton.js').Chemoton | null} [chemoton]
+   * @param {import('./colony.js').Colony | null} [colony]
    */
-  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null, chemoton = null) {
+  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null, chemoton = null, colony = null) {
     this._intervalDimersCreated += particleEvents.dimersCreated;
     this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
@@ -114,6 +128,10 @@ export class Metrics {
 
     if (this.s4Enabled && replicator && vesicle && chemoton) {
       this._recordS4(simTime, replicator, vesicle, chemoton);
+    }
+
+    if (this.s5Enabled && replicator && vesicle && chemoton && colony) {
+      this._recordS5(simTime, vesicle, chemoton, colony);
     }
 
     this._intervalDimersCreated = 0;
@@ -208,6 +226,11 @@ export class Metrics {
   /** @param {"chemotonCoherence"|"lineagePersistence"|"storageFidelity"|"chemotonCount"} key */
   getSparklineSeriesS4(key) {
     return this._historyS4.map((row) => row[key]);
+  }
+
+  /** @param {"multicellularPersistence"|"divisionOfLabor"|"developmentalPattern"|"colonyCount"} key */
+  getSparklineSeriesS5(key) {
+    return this._historyS5.map((row) => row[key]);
   }
 
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
@@ -431,6 +454,57 @@ export class Metrics {
     );
   }
 
+  /**
+   * @param {number} simTime
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {import('./chemoton.js').Chemoton} chemoton
+   * @param {import('./colony.js').Colony} colony
+   */
+  _recordS5(simTime, vesicle, chemoton, colony) {
+    this.multicellularPersistence = colony.multicellularPersistenceRatio();
+    this.divisionOfLabor = colony.divisionOfLaborShare(vesicle);
+    this.developmentalPattern = colony.developmentalPatternScore(vesicle);
+    this.colonyCount = colony.count();
+
+    this._pushHistoryS5(simTime, {
+      multicellularPersistence: this.multicellularPersistence,
+      divisionOfLabor: this.divisionOfLabor,
+      developmentalPattern: this.developmentalPattern,
+      colonyCount: this.colonyCount,
+    });
+    void chemoton;
+  }
+
+  _pushHistoryS5(simTime, sample) {
+    const sustainP = this.s5Thresholds?.sustainSeconds?.persistence ?? 120;
+    const sustainL = this.s5Thresholds?.sustainSeconds?.labor ?? 180;
+    const sustainD = this.s5Thresholds?.sustainSeconds?.pattern ?? 180;
+    this._historyS5.push({ t: simTime, ...sample });
+    const minTime = simTime - Math.max(sustainP, sustainL, sustainD);
+    while (this._historyS5.length > 0 && this._historyS5[0].t < minTime) {
+      this._historyS5.shift();
+    }
+    while (this._historyS5.length > this.historyMaxSamples) {
+      this._historyS5.shift();
+    }
+
+    this.multicellularPersistenceAvg = this._averageHistorySince(
+      this._historyS5,
+      "multicellularPersistence",
+      simTime - sustainP,
+    );
+    this.divisionOfLaborAvg = this._averageHistorySince(
+      this._historyS5,
+      "divisionOfLabor",
+      simTime - sustainL,
+    );
+    this.developmentalPatternAvg = this._averageHistorySince(
+      this._historyS5,
+      "developmentalPattern",
+      simTime - sustainD,
+    );
+  }
+
   /** @param {object[]} history @param {string} key */
   _averageHistory(history, key) {
     if (history.length === 0) return this[key] ?? 0;
@@ -481,7 +555,7 @@ export class Metrics {
       vesicleCount: this.vesicleCount,
     };
     if (!this.s4Enabled) return s3out;
-    return {
+    const s4out = {
       ...s3out,
       chemotonCoherence: this.chemotonCoherence,
       chemotonCoherenceAvg: this.chemotonCoherenceAvg,
@@ -489,6 +563,17 @@ export class Metrics {
       lineagePersistenceAvg: this.lineagePersistenceAvg,
       storageFidelity: this.storageFidelity,
       chemotonCount: this.chemotonCount,
+    };
+    if (!this.s5Enabled) return s4out;
+    return {
+      ...s4out,
+      multicellularPersistence: this.multicellularPersistence,
+      multicellularPersistenceAvg: this.multicellularPersistenceAvg,
+      divisionOfLabor: this.divisionOfLabor,
+      divisionOfLaborAvg: this.divisionOfLaborAvg,
+      developmentalPattern: this.developmentalPattern,
+      developmentalPatternAvg: this.developmentalPatternAvg,
+      colonyCount: this.colonyCount,
     };
   }
 }

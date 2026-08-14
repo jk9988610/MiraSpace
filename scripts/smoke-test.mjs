@@ -8,7 +8,8 @@ import { runSimSeconds, timed } from "./test-utils.mjs";
 import { buildReport } from "./test-report.mjs";
 
 const SEED = 42;
-const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45 };
+const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45, stage5: 45 };
+const SMOKE_WALL_MS = 12000;
 
 /**
  * @param {{ preset?: string }} [opts]
@@ -19,6 +20,7 @@ export function runSmoke(opts = {}) {
     stage2: loadPresetSync("stage2-default"),
     stage3: loadPresetSync("stage3-default"),
     stage4: loadPresetSync("stage4-default"),
+    stage5: loadPresetSync("stage5-default"),
   };
 
   const filter = opts.preset?.replace(/\.json$/, "");
@@ -28,6 +30,7 @@ export function runSmoke(opts = {}) {
     if (filter === "stage2-default") return key === "stage2";
     if (filter === "stage3-default") return key === "stage3";
     if (filter === "stage4-default") return key === "stage4";
+    if (filter === "stage5-default") return key === "stage5";
     return key === filter.replace("-default", "");
   });
 
@@ -76,6 +79,23 @@ export function runSmoke(opts = {}) {
         metrics.chemotonCoherence = Number((w.metrics.chemotonCoherence ?? 0).toFixed(3));
         metrics.vesicleCount = vesicles;
       }
+
+      if (stageKey === "stage5") {
+        const hasColony = w.colony != null;
+        checks.push({ id: "colonyModuleActive", pass: hasColony });
+        checks.push({
+          id: "colonyLinkOrRegistry",
+          pass: hasColony && testColonyLinkOnFission(w),
+        });
+        checks.push({
+          id: "s5MetricsRecorded",
+          pass: w.metrics.multicellularPersistence >= 0
+            && w.metrics.divisionOfLabor >= 0
+            && w.metrics.developmentalPattern >= 0,
+        });
+        metrics.colonyCount = w.metrics.colonyCount ?? 0;
+        metrics.divisionOfLabor = Number((w.metrics.divisionOfLabor ?? 0).toFixed(3));
+      }
     }
 
     return { checks, metrics };
@@ -83,7 +103,7 @@ export function runSmoke(opts = {}) {
 
   const checks = [
     ...result.checks,
-    { id: "wallClockUnder8s", pass: wallMs <= 8000 },
+    { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);
 
@@ -97,6 +117,20 @@ export function runSmoke(opts = {}) {
     metrics: result.metrics,
     allPass,
   });
+}
+
+/** @param {import('../site/js/world.js').World} world */
+function testColonyLinkOnFission(world) {
+  if (!world.colony || !world.vesicle) return false;
+  const parent = { id: "smoke-parent", lineageId: 1, age: 50, colonyId: null, links: [] };
+  const childA = { id: "smoke-a", lineageId: 1, age: 0, colonyId: null, links: [] };
+  const childB = { id: "smoke-b", lineageId: 1, age: 0, colonyId: null, links: [] };
+  world.colony.onFission(parent, childA, childB, world.vesicle);
+  return childA.links.length > 0
+    && childB.links.length > 0
+    && childA.colonyId != null
+    && childA.colonyId === childB.colonyId
+    && world.colony.count() > 0;
 }
 
 /** @param {import('../site/js/world.js').World} world */
