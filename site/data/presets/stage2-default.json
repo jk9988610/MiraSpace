@@ -1,0 +1,39 @@
+{
+  "extends": "stage0-default.json",
+  "particles": {
+    "catalyst": {
+      "pairingRate": 0.55
+    }
+  },
+  "replicator": {
+    "maxLength": 48,
+    "maxPopulation": 800,
+    "mutationRate": 0.002,
+    "nucleationRate": 0.0003,
+    "nucleationEnergyMin": 0.32,
+    "nucleationRadius": 36,
+    "initialCount": 0,
+    "maintenanceCost": 0.006,
+    "replicationCost": 0.035,
+    "replicationRateBase": 0.08,
+    "monomersRequired": 1,
+    "replicationRadius": 128,
+    "mobility": 6,
+    "radius": 4,
+    "L0Min": 4,
+    "L0Max": 8,
+    "parasiteMaxLen": 4,
+    "motifs": [{ "pattern": [1, 0, 1], "replicationBonus": 0.15 }]
+  },
+  "metricsThresholdsS2": {
+    "heritability": 0.55,
+    "selectiveSweepTopShare": 0.35,
+    "informationAccumulationRatio": 1.5,
+    "sustainSeconds": {
+      "heritability": 60,
+      "selectiveSweep": 120,
+      "informationAccumulation": 180
+    },
+    "updateEveryTicks": 10
+  }
+}

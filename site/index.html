@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="MiraSpace — 米拉空间数字生命演化模拟（P0 观察基底 + S1 前生物底物）">
+  <meta name="description" content="MiraSpace — 米拉空间数字生命演化模拟">
   <title>MiraSpace · 米拉空间</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
     <div class="portrait-overlay__content">
       <h1>MiraSpace</h1>
       <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
-      <p class="portrait-overlay__hint">米拉空间 · 阶段 0（P0 + S1 + P2）</p>
+      <p class="portrait-overlay__hint">米拉空间 · S1 / S2</p>
     </div>
   </div>
 
@@ -21,8 +21,12 @@
   <aside id="hud" class="hud" aria-live="polite">
     <header class="hud__header">
       <span class="hud__title">MiraSpace</span>
-      <span class="hud__stage">P0 + S1</span>
+      <span id="hud-stage" class="hud__stage">S1</span>
     </header>
+    <div class="hud__row">
+      <span>Preset</span>
+      <strong id="hud-preset">stage0-default</strong>
+    </div>
     <div class="hud__row">
       <span>Seed</span>
       <strong id="hud-seed">42</strong>
@@ -39,7 +43,12 @@
       <span>粒子</span>
       <strong id="hud-particles">0</strong>
     </div>
+    <div class="hud__row hud__row--s2" id="hud-row-strands" hidden>
+      <span>Strand</span>
+      <strong id="hud-strands">0</strong>
+    </div>
     <hr class="hud__divider">
+    <p class="hud__section">S1</p>
     <div class="hud__metric">
       <span class="hud__metric-label">clusterIndex</span>
       <span id="hud-cluster" class="hud__metric-value">—</span>
@@ -58,12 +67,40 @@
       <span id="hud-negentropy-avg" class="hud__metric-avg">avg —</span>
       <canvas id="spark-negentropy" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
     </div>
+    <div id="hud-s2" hidden>
+      <hr class="hud__divider">
+      <p class="hud__section">S2</p>
+      <div class="hud__metric">
+        <span class="hud__metric-label">heritability</span>
+        <span id="hud-heritability" class="hud__metric-value">—</span>
+        <span id="hud-heritability-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-heritability" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">selectiveSweep</span>
+        <span id="hud-sweep" class="hud__metric-value">—</span>
+        <span id="hud-sweep-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-sweep" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">informationAccumulation</span>
+        <span id="hud-info" class="hud__metric-value">—</span>
+        <span id="hud-info-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-info" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">parasiteFraction</span>
+        <span id="hud-parasite" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-parasite" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+    </div>
     <div class="hud__controls">
       <button id="btn-pause" type="button" aria-pressed="false">暂停</button>
       <button id="btn-grid" type="button" aria-pressed="true">网格</button>
       <button id="btn-field" type="button" aria-pressed="true">场</button>
     </div>
-    <p class="hud__help">单指拖动平移 · ?seed= 复现 · 虚线=门槛</p>
+    <p class="hud__help">?seed= & ?preset= · 虚线=门槛</p>
   </aside>
 
   <script type="module" src="js/main.js"></script>
