@@ -156,7 +156,7 @@ body {
 
 .app-shell--pending .hud,
 .app-shell--pending #control-panel,
-.app-shell--pending .top-right-ui {
+.app-shell--pending .danmaku-layer {
   visibility: hidden;
   pointer-events: none;
 }
@@ -671,73 +671,127 @@ body {
   }
 }
 
-.top-right-ui {
+.danmaku-layer {
   position: fixed;
-  top: calc(4.35rem + env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
-  z-index: 28;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
+  inset: 0;
+  z-index: 12;
   pointer-events: none;
+  overflow: hidden;
 }
 
-.top-right-ui > * {
-  pointer-events: auto;
-}
-
-.milestone-toast-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.milestone-toast {
-  max-width: min(280px, 42vw);
-  padding: 0.45rem 0.75rem;
-  border-radius: 0.45rem;
-  border: 1px solid rgba(160, 220, 160, 0.45);
-  background: rgba(20, 60, 40, 0.92);
+.danmaku-item {
+  position: absolute;
+  left: 0;
+  max-width: min(92vw, 640px);
+  padding: 0.38rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 220, 160, 0.55);
+  background: rgba(12, 42, 32, 0.88);
   color: #d8f8e0;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   line-height: 1.35;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  animation: danmaku-fly linear forwards;
+  will-change: transform;
 }
 
-.milestone-toast--show {
-  opacity: 1;
-  transform: translateY(0);
+@keyframes danmaku-fly {
+  from {
+    transform: translateX(-110vw);
+  }
+
+  to {
+    transform: translateX(110vw);
+  }
 }
 
-.milestone-toast--fade {
-  opacity: 0;
-  transform: translateY(-4px);
+.ui-guide__section--legend {
+  margin-top: 0.65rem;
 }
 
-.milestone-toast[hidden] {
-  display: none;
-}
-
-.top-right-ui__btn {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid rgba(120, 160, 200, 0.35);
-  border-radius: 0.45rem;
-  background: rgba(20, 36, 56, 0.92);
-  color: #d8e4f0;
-  font: inherit;
+.ui-guide__lead {
+  margin: 0 0 0.5rem;
   font-size: 0.72rem;
-  cursor: pointer;
+  color: #8aa4bc;
+  line-height: 1.45;
 }
 
-.top-right-ui__btn[aria-expanded="true"] {
-  background: rgba(50, 110, 170, 0.55);
-  border-color: rgba(120, 180, 240, 0.65);
+.ui-guide__legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-guide__legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #b8cce0;
+}
+
+.ui-guide__swatch {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.1rem;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 210, 240, 0.35);
+}
+
+.ui-guide__swatch--monomer {
+  background: #7ec8e8;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.ui-guide__swatch--catalyst {
+  background: #e8b44d;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.ui-guide__swatch--dimer {
+  background: #3d7ab8;
+  width: 1rem;
+  height: 1rem;
+}
+
+.ui-guide__swatch--strand {
+  background: hsla(280, 70%, 62%, 0.85);
+  box-shadow: 0 0 0 2px #c77dff;
+}
+
+.ui-guide__swatch--vesicle {
+  background: rgba(120, 200, 255, 0.25);
+  border: 2px solid rgba(160, 220, 255, 0.75);
+  border-radius: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.ui-guide__swatch--chemoton {
+  background: rgba(120, 200, 255, 0.65);
+  border-radius: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.ui-guide__swatch--link {
+  border-radius: 2px;
+  width: 1.4rem;
+  height: 0.35rem;
+  background: rgba(180, 240, 200, 0.75);
+}
+
+.ui-guide__swatch--field {
+  border-radius: 4px;
+  width: 1.15rem;
+  height: 1.15rem;
+  background: linear-gradient(135deg, rgba(40, 100, 80, 0.5), rgba(80, 200, 140, 0.85));
 }
 
 .ui-guide-panel {
@@ -746,7 +800,7 @@ body {
   right: max(12px, env(safe-area-inset-right));
   z-index: 27;
   width: min(320px, calc(100vw - 1.5rem));
-  max-height: min(58vh, calc(100vh - 12rem));
+  max-height: min(72vh, calc(100vh - 10rem));
   border: 1px solid rgba(120, 160, 200, 0.3);
   border-radius: 12px;
   background: rgba(8, 14, 24, 0.94);

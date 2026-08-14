@@ -15,7 +15,7 @@ import { createMilestoneToast } from "./milestone-toast.js";
 import { createMilestoneTracker } from "./milestone-tracker.js";
 import { buildSnapshotNarrative, buildSnapshotText } from "./data-export.js";
 import { createSnapshotModal } from "./snapshot-modal.js";
-import { createUiGuide, createSimObserver } from "./ui-guide.js";
+import { createUiGuide, createSimObserver, particleLegendBroadcastLines } from "./ui-guide.js";
 import { createConditionsTree } from "./conditions-tree.js";
 import { createInitPicker } from "./init-picker.js";
 
@@ -28,7 +28,7 @@ const portraitOverlay = document.getElementById("portrait-overlay");
 const initPickerContainer = document.getElementById("init-picker");
 const stageNavContainer = document.getElementById("stage-nav");
 const controlPanelContainer = document.getElementById("control-panel");
-const topRightUi = document.getElementById("top-right-ui");
+const danmakuLayer = document.getElementById("danmaku-layer");
 const uiGuidePanel = document.getElementById("ui-guide-panel");
 const snapshotModalContainer = document.getElementById("snapshot-modal");
 const conditionsTreeContainer = document.getElementById("conditions-tree");
@@ -149,6 +149,7 @@ function getGuideContext() {
     particleCount: world.particles.count(),
     strandCount: world.replicator?.count() ?? null,
     vesicleCount: world.vesicle?.count() ?? null,
+    colonyCount: world.colony?.count() ?? null,
     metrics: m,
   };
 }
@@ -541,6 +542,11 @@ async function startStage(tab, opts = {}) {
     logGuide(`切换阶段：${tab.label}（${tab.preset}）`);
   }
 
+  uiGuide?.broadcastStageLegend?.();
+  milestoneToast?.show(`里程碑弹幕已开启 · ${tab.label}`);
+  const legendPreview = particleLegendBroadcastLines(tab.key).slice(0, 2).join(" · ");
+  milestoneToast?.show(legendPreview);
+
   if (!frameStarted) {
     frameStarted = true;
     requestAnimationFrame(frame);
@@ -572,7 +578,7 @@ async function main() {
     },
   });
 
-  milestoneToast = createMilestoneToast(topRightUi);
+  milestoneToast = createMilestoneToast(danmakuLayer);
 
   milestoneTracker = createMilestoneTracker({
     onMilestone: (msg) => {
@@ -618,6 +624,7 @@ async function main() {
 
   uiGuide = createUiGuide(uiGuidePanel, controlPanel.btnGuide, {
     getContext: getGuideContext,
+    getStageKey: () => activeTab?.key ?? null,
   });
 
   conditionsTree = createConditionsTree(conditionsTreeContainer, controlPanel.btnConditions, {
