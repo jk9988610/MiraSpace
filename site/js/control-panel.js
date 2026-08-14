@@ -96,6 +96,15 @@ export function createControlPanel(container, handlers) {
   btnGuide.setAttribute("aria-expanded", "false");
   rowTools.appendChild(btnGuide);
 
+  const btnConditions = document.createElement("button");
+  btnConditions.type = "button";
+  btnConditions.id = "btn-conditions";
+  btnConditions.className = "control-panel__btn control-panel__btn--conditions";
+  btnConditions.textContent = "条件";
+  btnConditions.title = "里程碑条件科技树";
+  btnConditions.setAttribute("aria-expanded", "false");
+  rowTools.appendChild(btnConditions);
+
   const btnSnapshot = document.createElement("button");
   btnSnapshot.type = "button";
   btnSnapshot.id = "btn-snapshot";
@@ -134,5 +143,5 @@ export function createControlPanel(container, handlers) {
     showField: true,
   });
 
-  return { syncUi, btnPause, btnGrid, btnField, btnGuide };
+  return { syncUi, btnPause, btnGrid, btnField, btnGuide, btnConditions };
 }
