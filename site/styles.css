@@ -151,32 +151,80 @@ body {
 }
 
 .hud__controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.65rem;
+  display: none;
 }
 
-.hud__controls button {
-  flex: 1 1 auto;
-  min-width: 3.2rem;
-  padding: 0.35rem 0.5rem;
+.control-panel {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(120, 160, 200, 0.28);
+  border-radius: 12px;
+  background: rgba(8, 14, 24, 0.88);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.control-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.control-panel__speeds {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.control-panel__btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.35rem 0.55rem;
   border: 1px solid rgba(120, 160, 200, 0.35);
-  border-radius: 0.35rem;
-  background: rgba(20, 36, 56, 0.9);
+  border-radius: 0.45rem;
+  background: rgba(20, 36, 56, 0.92);
   color: #d8e4f0;
   font: inherit;
   font-size: 0.72rem;
+  line-height: 1;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.hud__controls button[aria-pressed="true"] {
-  background: rgba(50, 110, 170, 0.55);
+.control-panel__btn:hover {
   border-color: rgba(120, 180, 240, 0.55);
 }
 
-.hud__controls button:active {
-  transform: scale(0.98);
+.control-panel__btn[aria-pressed="true"],
+.control-panel__btn--active {
+  background: rgba(50, 110, 170, 0.55);
+  border-color: rgba(120, 180, 240, 0.65);
+}
+
+.control-panel__btn--pause {
+  font-size: 0.95rem;
+}
+
+.control-panel__btn--reset {
+  min-width: 3.5rem;
+}
+
+@media (max-width: 640px) {
+  .control-panel {
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .control-panel__btn {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 0.68rem;
+  }
 }
 
 .hud__help {

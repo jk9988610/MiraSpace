@@ -9,6 +9,8 @@ import {
   parseStageFromUrl,
   syncStageUrl,
 } from "./stage-nav.js";
+import { createSimClock, parseTimeScaleFromUrl } from "./sim-clock.js";
+import { createControlPanel } from "./control-panel.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -17,6 +19,7 @@ const ctx = canvas.getContext("2d", { alpha: false });
 
 const portraitOverlay = document.getElementById("portrait-overlay");
 const stageNavContainer = document.getElementById("stage-nav");
+const controlPanelContainer = document.getElementById("control-panel");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
 const hudPreset = document.getElementById("hud-preset");
@@ -83,9 +86,6 @@ const sparkPersistence = document.getElementById("spark-persistence");
 const sparkLabor = document.getElementById("spark-labor");
 const sparkPattern = document.getElementById("spark-pattern");
 const sparkColonyCount = document.getElementById("spark-colony-count");
-const btnPause = document.getElementById("btn-pause");
-const btnGrid = document.getElementById("btn-grid");
-const btnField = document.getElementById("btn-field");
 
 /** @type {World | null} */
 let world = null;
@@ -98,9 +98,12 @@ let currentSeed = 42;
 /** @type {import('./stage-nav.js').STAGE_TABS[number]} */
 let activeTab = STAGE_TABS[0];
 let dpr = 1;
-let lastFrameTime = performance.now();
+/** @type {ReturnType<typeof createSimClock>} */
+let simClock = createSimClock({ timeScale: 1 });
 /** @type {ReturnType<typeof createStageNav> | null} */
 let stageNav = null;
+/** @type {ReturnType<typeof createControlPanel> | null} */
+let controlPanel = null;
 
 function parseSeedFromUrl(defaultSeed) {
   const params = new URLSearchParams(window.location.search);
@@ -328,66 +331,71 @@ function updateHud(w) {
   }
 }
 
-function frame(now) {
+function syncUrl() {
+  syncStageUrl(currentSeed, presetName, simClock.timeScale);
+}
+
+function syncControlPanelUi() {
+  if (!world || !controlPanel) return;
+  controlPanel.syncUi({
+    paused: simClock.paused,
+    timeScale: simClock.timeScale,
+    showGrid: world.showGrid,
+    showField: world.showFieldHeatmap,
+  });
+}
+
+/**
+ * @param {number} seed
+ * @param {{ resetPause?: boolean }} [opts]
+ */
+function initWorld(seed, opts = {}) {
+  world = new World(presetRef, seed);
+  currentSeed = seed;
+
+  if (opts.resetPause !== false) {
+    simClock.resume();
+  }
+
+  if (!camera) {
+    camera = new Camera(world.width, world.height);
+    camera.attachPanHandlers(canvas);
+  } else {
+    resetCameraCenter(camera, world);
+  }
+  resizeCanvas();
+  syncControlPanelUi();
+}
+
+/** @param {World} w */
+function renderWorld(w) {
+  drawBackground();
+  drawGrid(camera, w);
+  if (w.showFieldHeatmap) {
+    w.fields.drawHeatmap(ctx, camera);
+  }
+  w.particles.draw(ctx, camera);
+  if (w.replicator) {
+    w.replicator.draw(ctx, camera);
+  }
+  if (w.vesicle && w.replicator) {
+    if (w.colony) {
+      w.colony.drawLinks(ctx, camera, w.vesicle);
+    }
+    w.vesicle.draw(ctx, camera, w.replicator);
+  }
+}
+
+function frame() {
   requestAnimationFrame(frame);
 
   if (!world || !camera || !isLandscape()) {
-    lastFrameTime = now;
     return;
   }
 
-  const frameDt = Math.min(0.05, (now - lastFrameTime) / 1000);
-  lastFrameTime = now;
-
-  world.stepFrame(frameDt);
-
-  drawBackground();
-  drawGrid(camera, world);
-  if (world.showFieldHeatmap) {
-    world.fields.drawHeatmap(ctx, camera);
-  }
-  world.particles.draw(ctx, camera);
-  if (world.replicator) {
-    world.replicator.draw(ctx, camera);
-  }
-  if (world.vesicle && world.replicator) {
-    if (world.colony) {
-      world.colony.drawLinks(ctx, camera, world.vesicle);
-    }
-    world.vesicle.draw(ctx, camera, world.replicator);
-  }
+  simClock.stepFrame(world);
+  renderWorld(world);
   updateHud(world);
-}
-
-function bindControls() {
-  btnPause.addEventListener("click", () => {
-    if (!world) return;
-    const paused = world.togglePause();
-    btnPause.textContent = paused ? "继续" : "暂停";
-    btnPause.setAttribute("aria-pressed", String(paused));
-  });
-
-  btnGrid.addEventListener("click", () => {
-    if (!world) return;
-    const on = world.toggleGrid();
-    btnGrid.setAttribute("aria-pressed", String(on));
-  });
-
-  btnField.addEventListener("click", () => {
-    if (!world) return;
-    const on = world.toggleFieldHeatmap();
-    btnField.setAttribute("aria-pressed", String(on));
-  });
-}
-
-function resetControlUi(w) {
-  world = w;
-  world.paused = false;
-  world.accumulator = 0;
-  btnPause.textContent = "暂停";
-  btnPause.setAttribute("aria-pressed", "false");
-  btnGrid.setAttribute("aria-pressed", String(w.showGrid));
-  btnField.setAttribute("aria-pressed", String(w.showFieldHeatmap));
 }
 
 /**
@@ -404,32 +412,26 @@ async function switchStage(tab, seed, opts = {}) {
   presetRef = await loadPreset(presetName);
   presetRef._name = presetName;
 
-  const nextWorld = new World(presetRef, seed);
-  resetControlUi(nextWorld);
-
-  if (!camera) {
-    camera = new Camera(nextWorld.width, nextWorld.height);
-    camera.attachPanHandlers(canvas);
-    resizeCanvas();
-  } else {
-    resetCameraCenter(camera, nextWorld);
-    resizeCanvas();
-  }
+  initWorld(seed, { resetPause: true });
 
   applyHudVisibility(tab);
-  syncStageUrl(seed, presetName);
+  syncUrl();
   stageNav?.setActiveTab(tab);
   if (opts.toast) {
     stageNav?.showToast(`已切换至：${tab.label}`);
   }
+}
 
-  lastFrameTime = performance.now();
+async function resetCurrentRun() {
+  initWorld(currentSeed, { resetPause: true });
+  syncUrl();
 }
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
   activeTab = parseStageFromUrl(params);
   presetName = activeTab.preset;
+  simClock = createSimClock({ timeScale: parseTimeScaleFromUrl(params) });
 
   presetRef = await loadPreset(presetName);
   presetRef._name = presetName;
@@ -442,15 +444,36 @@ async function main() {
     },
   });
 
-  world = new World(presetRef, currentSeed);
-  camera = new Camera(world.width, world.height);
+  controlPanel = createControlPanel(controlPanelContainer, {
+    getTimeScale: () => simClock.timeScale,
+    onPauseToggle: () => {
+      simClock.togglePause();
+      syncControlPanelUi();
+    },
+    onTimeScale: (scale) => {
+      simClock.setTimeScale(scale);
+      syncUrl();
+      syncControlPanelUi();
+    },
+    onGridToggle: () => {
+      if (!world) return;
+      world.toggleGrid();
+      syncControlPanelUi();
+    },
+    onFieldToggle: () => {
+      if (!world) return;
+      world.toggleFieldHeatmap();
+      syncControlPanelUi();
+    },
+    onReset: () => {
+      void resetCurrentRun();
+    },
+  });
 
-  resizeCanvas();
-  camera.attachPanHandlers(canvas);
-  bindControls();
+  initWorld(currentSeed);
   applyHudVisibility(activeTab);
   stageNav.setActiveTab(activeTab);
-  syncStageUrl(currentSeed, presetName);
+  syncUrl();
 
   window.addEventListener("resize", () => {
     updateOrientationOverlay();

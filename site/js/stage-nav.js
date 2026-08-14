@@ -67,13 +67,15 @@ export function parseStageFromUrl(params, fallbackPreset = "stage0-default") {
 /**
  * @param {number} seed
  * @param {string} presetName
+ * @param {number} [timeScale]
  */
-export function syncStageUrl(seed, presetName) {
+export function syncStageUrl(seed, presetName, timeScale = 1) {
   const params = new URLSearchParams();
   params.set("seed", String(seed));
   params.set("preset", presetName.replace(/\.json$/, ""));
+  if (timeScale > 1) params.set("timeScale", String(timeScale));
   const url = `${window.location.pathname}?${params.toString()}`;
-  history.replaceState({ seed, preset: presetName }, "", url);
+  history.replaceState({ seed, preset: presetName, timeScale }, "", url);
 }
 
 /**
