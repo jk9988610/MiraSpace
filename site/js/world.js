@@ -2,6 +2,7 @@ import { Fields } from "./fields.js";
 import { Particles } from "./particles.js";
 import { Metrics } from "./metrics.js";
 import { Replicator } from "./replicator.js";
+import { Vesicle } from "./vesicle.js";
 import { createRng } from "./camera.js";
 
 /**
@@ -35,7 +36,15 @@ export class World {
     this.replicator = preset.replicator
       ? new Replicator(preset, this.width, this.height, this.rng)
       : null;
-    this.metrics = new Metrics(preset, this.particles.typeCountsSnapshot(), this.replicator);
+    this.vesicle = preset.vesicle
+      ? new Vesicle(preset, this.width, this.height, this.rng)
+      : null;
+    this.metrics = new Metrics(
+      preset,
+      this.particles.typeCountsSnapshot(),
+      this.replicator,
+      this.vesicle,
+    );
 
     this.showGrid = preset.render.showGrid;
     this.showFieldHeatmap = true;
@@ -70,6 +79,17 @@ export class World {
       replicatorEvents = this.replicator.step(this.dt, this.fields, this.particles, this.rng);
     }
 
+    let vesicleEvents = null;
+    if (this.vesicle && this.replicator) {
+      vesicleEvents = this.vesicle.step(
+        this.dt,
+        this.fields,
+        this.particles,
+        this.replicator,
+        this.rng,
+      );
+    }
+
     this.metrics.record(
       this.tickCount,
       this.simTime,
@@ -77,6 +97,8 @@ export class World {
       particleEvents,
       this.replicator,
       replicatorEvents,
+      this.vesicle,
+      vesicleEvents,
     );
   }
 

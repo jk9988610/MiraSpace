@@ -193,7 +193,8 @@ body {
   text-transform: uppercase;
 }
 
-.hud--wide {
+.hud--wide,
+.hud--s3 {
   max-height: calc(100vh - 1.5rem);
   overflow-y: auto;
 }

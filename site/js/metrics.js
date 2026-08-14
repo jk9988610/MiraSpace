@@ -9,8 +9,9 @@ export class Metrics {
    * @param {object} preset
    * @param {{ monomer: number, catalyst: number, dimer: number }} initialCounts
    * @param {import('./replicator.js').Replicator | null} [replicator]
+   * @param {import('./vesicle.js').Vesicle | null} [vesicle]
    */
-  constructor(preset, initialCounts, replicator = null) {
+  constructor(preset, initialCounts, replicator = null, vesicle = null) {
     this.preset = preset;
     this.thresholds = preset.metricsThresholds;
     this.updateEvery = this.thresholds.updateEveryTicks ?? 10;
@@ -48,6 +49,19 @@ export class Metrics {
     this._historyS2 = [];
     this._topShareStart = null;
     this._heritabilitySamples = [];
+
+    this.s3Enabled = !!preset.vesicle;
+    this.vesicle = vesicle;
+    this.s3Thresholds = preset.metricsThresholdsS3 ?? null;
+    this.encapsulationGain = 1;
+    this.parasiteLoad = 1;
+    this.fissionEvents = 0;
+    this.fissionEventsRate = 0;
+    this.vesicleCount = 0;
+    this.encapsulationGainAvg = 1;
+    this.parasiteLoadAvg = 1;
+    this._historyS3 = [];
+    this._fissionLog = [];
   }
 
   /**
@@ -57,8 +71,10 @@ export class Metrics {
    * @param {{ dimersCreated: number, dimersCreatedNearCatalyst: number }} particleEvents
    * @param {import('./replicator.js').Replicator | null} replicator
    * @param {object | null} replicatorEvents
+   * @param {import('./vesicle.js').Vesicle | null} [vesicle]
+   * @param {object | null} [vesicleEvents]
    */
-  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents) {
+  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null) {
     this._intervalDimersCreated += particleEvents.dimersCreated;
     this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
@@ -77,6 +93,10 @@ export class Metrics {
 
     if (this.s2Enabled && replicator && replicatorEvents) {
       this._recordS2(simTime, replicator, replicatorEvents);
+    }
+
+    if (this.s3Enabled && replicator && vesicle) {
+      this._recordS3(simTime, replicator, vesicle, vesicleEvents);
     }
 
     this._intervalDimersCreated = 0;
@@ -161,6 +181,11 @@ export class Metrics {
   /** @param {"heritability"|"selectiveSweep"|"informationAccumulation"|"parasiteFraction"} key */
   getSparklineSeriesS2(key) {
     return this._historyS2.map((row) => row[key]);
+  }
+
+  /** @param {"encapsulationGain"|"parasiteLoad"|"fissionEvents"|"vesicleCount"} key */
+  getSparklineSeriesS3(key) {
+    return this._historyS3.map((row) => row[key]);
   }
 
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
@@ -254,6 +279,87 @@ export class Metrics {
     this.informationAccumulationAvg = this._averageHistorySince(this._historyS2, "informationAccumulation", minTime);
   }
 
+  /**
+   * @param {number} simTime
+   * @param {import('./replicator.js').Replicator} replicator
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {object | null} vesicleEvents
+   */
+  _recordS3(simTime, replicator, vesicle, vesicleEvents) {
+    if (vesicleEvents?.fissionEvents) {
+      this._fissionLog.push({ t: simTime, n: vesicleEvents.fissionEvents });
+    }
+
+    const fWindow = this.s3Thresholds?.sustainSeconds?.fissionEvents ?? 300;
+    while (this._fissionLog.length > 0 && this._fissionLog[0].t < simTime - fWindow) {
+      this._fissionLog.shift();
+    }
+    let fissionSum = 0;
+    for (const row of this._fissionLog) fissionSum += row.n;
+    this.fissionEvents = fissionSum;
+    this.fissionEventsRate = fissionSum / (fWindow / 300);
+
+    this.vesicleCount = vesicle.count();
+
+    let interior = 0;
+    let exterior = 0;
+    for (const strand of replicator.list) {
+      if (strand.vesicleId) interior += 1;
+      else exterior += 1;
+    }
+
+    let interiorArea = 0;
+    for (const v of vesicle.list) {
+      interiorArea += Math.PI * v.radius * v.radius;
+    }
+    const exteriorArea = Math.max(1, this.worldArea - interiorArea);
+    const interiorDensity = interior / Math.max(1, interiorArea);
+    const exteriorDensity = exterior / exteriorArea;
+
+    if (interior > 0 && exterior > 0) {
+      this.encapsulationGain = interiorDensity / Math.max(1e-9, exteriorDensity);
+    } else if (interior > 0) {
+      this.encapsulationGain = 2;
+    } else {
+      this.encapsulationGain = 1;
+    }
+
+    const total = replicator.count();
+    this.parasiteLoad = total > 0 ? exterior / total : 1;
+
+    this._pushHistoryS3(simTime, {
+      encapsulationGain: this.encapsulationGain,
+      parasiteLoad: this.parasiteLoad,
+      fissionEvents: this.fissionEvents,
+      vesicleCount: this.vesicleCount,
+    });
+  }
+
+  _pushHistoryS3(simTime, sample) {
+    const sustainGain = this.s3Thresholds?.sustainSeconds?.encapsulationGain ?? 60;
+    const sustainParasite = this.s3Thresholds?.sustainSeconds?.parasiteLoad ?? 120;
+    this._historyS3.push({ t: simTime, ...sample });
+    const maxWindow = Math.max(sustainGain, sustainParasite, 300);
+    const minTime = simTime - maxWindow;
+    while (this._historyS3.length > 0 && this._historyS3[0].t < minTime) {
+      this._historyS3.shift();
+    }
+    while (this._historyS3.length > this.historyMaxSamples) {
+      this._historyS3.shift();
+    }
+
+    this.encapsulationGainAvg = this._averageHistorySince(
+      this._historyS3,
+      "encapsulationGain",
+      simTime - sustainGain,
+    );
+    this.parasiteLoadAvg = this._averageHistorySince(
+      this._historyS3,
+      "parasiteLoad",
+      simTime - sustainParasite,
+    );
+  }
+
   /** @param {object[]} history @param {string} key */
   _averageHistory(history, key) {
     if (history.length === 0) return this[key] ?? 0;
@@ -281,7 +387,7 @@ export class Metrics {
       negentropyAvg: this.negentropyAvg,
     };
     if (!this.s2Enabled) return base;
-    return {
+    const out = {
       ...base,
       heritability: this.heritability,
       heritabilityAvg: this.heritabilityAvg,
@@ -291,6 +397,17 @@ export class Metrics {
       informationAccumulationAvg: this.informationAccumulationAvg,
       parasiteFraction: this.parasiteFraction,
       strandCount: this.replicator?.count() ?? 0,
+    };
+    if (!this.s3Enabled) return out;
+    return {
+      ...out,
+      encapsulationGain: this.encapsulationGain,
+      encapsulationGainAvg: this.encapsulationGainAvg,
+      parasiteLoad: this.parasiteLoad,
+      parasiteLoadAvg: this.parasiteLoadAvg,
+      fissionEvents: this.fissionEvents,
+      fissionEventsRate: this.fissionEventsRate,
+      vesicleCount: this.vesicleCount,
     };
   }
 }
