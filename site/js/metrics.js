@@ -1,14 +1,17 @@
 import { wrapDelta } from "./camera.js";
+import { sequenceSimilarity } from "./replicator.js";
 
 /**
- * S1 emergence metrics with sliding-window averages.
+ * S1 + optional S2 emergence metrics with sliding-window averages.
  */
 export class Metrics {
   /**
    * @param {object} preset
    * @param {{ monomer: number, catalyst: number, dimer: number }} initialCounts
+   * @param {import('./replicator.js').Replicator | null} [replicator]
    */
-  constructor(preset, initialCounts) {
+  constructor(preset, initialCounts, replicator = null) {
+    this.preset = preset;
     this.thresholds = preset.metricsThresholds;
     this.updateEvery = this.thresholds.updateEveryTicks ?? 10;
     this.sustainSeconds = this.thresholds.sustainSeconds ?? 60;
@@ -21,28 +24,43 @@ export class Metrics {
     this.clusterIndex = 1;
     this.autocatalyticScore = 1;
     this.negentropyFlux = 1;
-
     this.clusterAvg = 1;
     this.autocatalyticAvg = 1;
     this.negentropyAvg = 1;
-
     this._history = [];
 
     this._intervalDimersCreated = 0;
     this._intervalDimersNearCat = 0;
     this._intervalTicks = 0;
     this._globalFormationRate = 0.001;
+
+    this.s2Enabled = !!preset.replicator;
+    this.replicator = replicator;
+    this.s2Thresholds = preset.metricsThresholdsS2 ?? null;
+
+    this.heritability = 0;
+    this.selectiveSweep = 0;
+    this.informationAccumulation = 1;
+    this.parasiteFraction = 0;
+    this.heritabilityAvg = 0;
+    this.selectiveSweepAvg = 0;
+    this.informationAccumulationAvg = 1;
+    this._historyS2 = [];
+    this._topShareStart = null;
+    this._heritabilitySamples = [];
   }
 
   /**
    * @param {number} tick
    * @param {number} simTime
    * @param {import('./particles.js').Particles} particles
-   * @param {{ dimersCreated: number, dimersCreatedNearCatalyst: number }} events
+   * @param {{ dimersCreated: number, dimersCreatedNearCatalyst: number }} particleEvents
+   * @param {import('./replicator.js').Replicator | null} replicator
+   * @param {object | null} replicatorEvents
    */
-  record(tick, simTime, particles, events) {
-    this._intervalDimersCreated += events.dimersCreated;
-    this._intervalDimersNearCat += events.dimersCreatedNearCatalyst;
+  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents) {
+    this._intervalDimersCreated += particleEvents.dimersCreated;
+    this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
 
     if (tick % this.updateEvery !== 0) return;
@@ -57,14 +75,92 @@ export class Metrics {
       negentropyFlux: this.negentropyFlux,
     });
 
+    if (this.s2Enabled && replicator && replicatorEvents) {
+      this._recordS2(simTime, replicator, replicatorEvents);
+    }
+
     this._intervalDimersCreated = 0;
     this._intervalDimersNearCat = 0;
     this._intervalTicks = 0;
   }
 
+  /**
+   * @param {number} simTime
+   * @param {import('./replicator.js').Replicator} replicator
+   * @param {object} events
+   */
+  _recordS2(simTime, replicator, events) {
+    for (const pair of events.replicationPairs) {
+      this._heritabilitySamples.push({
+        t: simTime,
+        v: sequenceSimilarity(pair.parentSeq, pair.childSeq),
+      });
+    }
+    const hWindow = this.s2Thresholds?.sustainSeconds?.heritability ?? 60;
+    while (this._heritabilitySamples.length > 0 && this._heritabilitySamples[0].t < simTime - hWindow) {
+      this._heritabilitySamples.shift();
+    }
+    if (this._heritabilitySamples.length > 0) {
+      let sum = 0;
+      for (const s of this._heritabilitySamples) sum += s.v;
+      this.heritability = sum / this._heritabilitySamples.length;
+    }
+
+    const total = replicator.count();
+    if (total > 0) {
+      let top = 0;
+      for (const count of events.lineageCounts.values()) {
+        if (count > top) top = count;
+      }
+      const topShare = top / total;
+      if (this._topShareStart == null) this._topShareStart = topShare;
+
+      let mean = 0;
+      let meanSq = 0;
+      let n = 0;
+      for (const fitnesses of events.fitnessByLineage.values()) {
+        for (const f of fitnesses) {
+          mean += f;
+          meanSq += f * f;
+          n += 1;
+        }
+      }
+      const variance = n > 1 ? Math.max(0, meanSq / n - (mean / n) ** 2) : 0;
+      this.selectiveSweep = topShare * (variance > 1e-6 ? 1 : 0.5) + Math.max(0, topShare - (this._topShareStart ?? 0));
+    } else {
+      this.selectiveSweep = 0;
+    }
+
+    const L0 = Math.max(1, replicator.L0Baseline());
+    this.informationAccumulation = replicator.meanLength() / L0;
+
+    const parasiteMax = replicator.cfg.parasiteMaxLen ?? 4;
+    let parasites = 0;
+    for (const strand of replicator.list) {
+      const repRate = strand.replicationSuccesses / Math.max(1, strand.age);
+      const hasMotif = replicator.hasFunctionalMotif(strand.sequence);
+      if (strand.sequence.length <= parasiteMax && repRate > 0.05 && !hasMotif) {
+        parasites += 1;
+      }
+    }
+    this.parasiteFraction = total > 0 ? parasites / total : 0;
+
+    this._pushHistoryS2(simTime, {
+      heritability: this.heritability,
+      selectiveSweep: this.selectiveSweep,
+      informationAccumulation: this.informationAccumulation,
+      parasiteFraction: this.parasiteFraction,
+    });
+  }
+
   /** @param {"clusterIndex"|"autocatalyticScore"|"negentropyFlux"} key */
   getSparklineSeries(key) {
     return this._history.map((row) => row[key]);
+  }
+
+  /** @param {"heritability"|"selectiveSweep"|"informationAccumulation"|"parasiteFraction"} key */
+  getSparklineSeriesS2(key) {
+    return this._historyS2.map((row) => row[key]);
   }
 
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
@@ -125,10 +221,6 @@ export class Metrics {
     return unevenness / this.baselineUnevenness;
   }
 
-  /**
-   * @param {number} simTime
-   * @param {{ clusterIndex: number, autocatalyticScore: number, negentropyFlux: number }} sample
-   */
   _pushHistory(simTime, sample) {
     this._history.push({ t: simTime, ...sample });
     const minTime = simTime - this.sustainSeconds;
@@ -139,27 +231,66 @@ export class Metrics {
       this._history.shift();
     }
 
-    this.clusterAvg = this._averageHistory("clusterIndex");
-    this.autocatalyticAvg = this._averageHistory("autocatalyticScore");
-    this.negentropyAvg = this._averageHistory("negentropyFlux");
+    this.clusterAvg = this._averageHistory(this._history, "clusterIndex");
+    this.autocatalyticAvg = this._averageHistory(this._history, "autocatalyticScore");
+    this.negentropyAvg = this._averageHistory(this._history, "negentropyFlux");
   }
 
-  /** @param {"clusterIndex"|"autocatalyticScore"|"negentropyFlux"} key */
-  _averageHistory(key) {
-    if (this._history.length === 0) return this[key];
+  _pushHistoryS2(simTime, sample) {
+    const sustain = this.s2Thresholds?.sustainSeconds?.informationAccumulation ?? 180;
+    this._historyS2.push({ t: simTime, ...sample });
+    const minTime = simTime - sustain;
+    while (this._historyS2.length > 0 && this._historyS2[0].t < minTime) {
+      this._historyS2.shift();
+    }
+    while (this._historyS2.length > this.historyMaxSamples) {
+      this._historyS2.shift();
+    }
+
+    const hWindow = this.s2Thresholds?.sustainSeconds?.heritability ?? 60;
+    this.heritabilityAvg = this._averageHistorySince(this._historyS2, "heritability", simTime - hWindow);
+    const sWindow = this.s2Thresholds?.sustainSeconds?.selectiveSweep ?? 120;
+    this.selectiveSweepAvg = this._averageHistorySince(this._historyS2, "selectiveSweep", simTime - sWindow);
+    this.informationAccumulationAvg = this._averageHistorySince(this._historyS2, "informationAccumulation", minTime);
+  }
+
+  /** @param {object[]} history @param {string} key */
+  _averageHistory(history, key) {
+    if (history.length === 0) return this[key] ?? 0;
     let sum = 0;
-    for (const row of this._history) sum += row[key];
-    return sum / this._history.length;
+    for (const row of history) sum += row[key];
+    return sum / history.length;
+  }
+
+  /** @param {object[]} history @param {string} key @param {number} minTime */
+  _averageHistorySince(history, key, minTime) {
+    const rows = history.filter((row) => row.t >= minTime);
+    if (rows.length === 0) return this[key] ?? 0;
+    let sum = 0;
+    for (const row of rows) sum += row[key];
+    return sum / rows.length;
   }
 
   formatHud() {
-    return {
+    const base = {
       clusterIndex: this.clusterIndex,
       clusterAvg: this.clusterAvg,
       autocatalyticScore: this.autocatalyticScore,
       autocatalyticAvg: this.autocatalyticAvg,
       negentropyFlux: this.negentropyFlux,
       negentropyAvg: this.negentropyAvg,
+    };
+    if (!this.s2Enabled) return base;
+    return {
+      ...base,
+      heritability: this.heritability,
+      heritabilityAvg: this.heritabilityAvg,
+      selectiveSweep: this.selectiveSweep,
+      selectiveSweepAvg: this.selectiveSweepAvg,
+      informationAccumulation: this.informationAccumulation,
+      informationAccumulationAvg: this.informationAccumulationAvg,
+      parasiteFraction: this.parasiteFraction,
+      strandCount: this.replicator?.count() ?? 0,
     };
   }
 }

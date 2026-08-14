@@ -1,0 +1,6 @@
+{
+  "extends": "stage2-default.json",
+  "replicator": {
+    "mutationRate": 0.05
+  }
+}

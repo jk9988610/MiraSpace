@@ -1,8 +1,7 @@
 import { Camera } from "./camera.js";
 import { World } from "./world.js";
 import { drawSparkline } from "./sparkline.js";
-
-const PRESET_URL = "./data/presets/stage0-default.json";
+import { loadPreset, parsePresetFromUrl } from "./preset.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -10,10 +9,16 @@ const canvas = document.getElementById("world-canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 
 const portraitOverlay = document.getElementById("portrait-overlay");
+const hud = document.getElementById("hud");
+const hudStage = document.getElementById("hud-stage");
+const hudPreset = document.getElementById("hud-preset");
 const hudTick = document.getElementById("hud-tick");
 const hudTime = document.getElementById("hud-time");
 const hudParticles = document.getElementById("hud-particles");
 const hudSeed = document.getElementById("hud-seed");
+const hudRowStrands = document.getElementById("hud-row-strands");
+const hudStrands = document.getElementById("hud-strands");
+const hudS2 = document.getElementById("hud-s2");
 const hudCluster = document.getElementById("hud-cluster");
 const hudClusterAvg = document.getElementById("hud-cluster-avg");
 const hudAutocat = document.getElementById("hud-autocat");
@@ -23,6 +28,17 @@ const hudNegentropyAvg = document.getElementById("hud-negentropy-avg");
 const sparkCluster = document.getElementById("spark-cluster");
 const sparkAutocat = document.getElementById("spark-autocat");
 const sparkNegentropy = document.getElementById("spark-negentropy");
+const hudHeritability = document.getElementById("hud-heritability");
+const hudHeritabilityAvg = document.getElementById("hud-heritability-avg");
+const hudSweep = document.getElementById("hud-sweep");
+const hudSweepAvg = document.getElementById("hud-sweep-avg");
+const hudInfo = document.getElementById("hud-info");
+const hudInfoAvg = document.getElementById("hud-info-avg");
+const hudParasite = document.getElementById("hud-parasite");
+const sparkHeritability = document.getElementById("spark-heritability");
+const sparkSweep = document.getElementById("spark-sweep");
+const sparkInfo = document.getElementById("spark-info");
+const sparkParasite = document.getElementById("spark-parasite");
 const btnPause = document.getElementById("btn-pause");
 const btnGrid = document.getElementById("btn-grid");
 const btnField = document.getElementById("btn-field");
@@ -33,6 +49,7 @@ let world = null;
 let camera = null;
 /** @type {object | null} */
 let presetRef = null;
+let presetName = "stage0-default";
 let dpr = 1;
 let lastFrameTime = performance.now();
 
@@ -68,14 +85,6 @@ function resizeCanvas() {
   if (camera) {
     camera.setViewport(cssW, cssH);
   }
-}
-
-async function loadPreset() {
-  const response = await fetch(PRESET_URL);
-  if (!response.ok) {
-    throw new Error(`Failed to load preset: ${response.status}`);
-  }
-  return response.json();
 }
 
 function drawBackground() {
@@ -124,9 +133,10 @@ function updateHud(w) {
   hudTime.textContent = `${w.simTime.toFixed(1)} s`;
   hudParticles.textContent = String(w.particles.count());
   hudSeed.textContent = String(w.seed);
+  hudPreset.textContent = presetName;
 
   const m = w.metrics.formatHud();
-  const thresholds = presetRef.metricsThresholds;
+  const s1 = presetRef.metricsThresholds;
 
   hudCluster.textContent = m.clusterIndex.toFixed(2);
   hudClusterAvg.textContent = `avg ${m.clusterAvg.toFixed(2)}`;
@@ -137,16 +147,49 @@ function updateHud(w) {
 
   drawSparkline(sparkCluster, w.metrics.getSparklineSeries("clusterIndex"), {
     color: "#8ec8ff",
-    threshold: thresholds.clusterIndex,
+    threshold: s1.clusterIndex,
   });
   drawSparkline(sparkAutocat, w.metrics.getSparklineSeries("autocatalyticScore"), {
     color: "#e8b44d",
-    threshold: thresholds.autocatalyticScore,
+    threshold: s1.autocatalyticScore,
   });
   drawSparkline(sparkNegentropy, w.metrics.getSparklineSeries("negentropyFlux"), {
     color: "#7fd4a8",
-    threshold: thresholds.negentropyFluxRatio,
+    threshold: s1.negentropyFluxRatio,
   });
+
+  if (w.replicator) {
+    hudRowStrands.hidden = false;
+    hudS2.hidden = false;
+    hud.classList.add("hud--wide");
+    hudStage.textContent = "S1+S2";
+    hudStrands.textContent = String(m.strandCount ?? 0);
+
+    const s2 = presetRef.metricsThresholdsS2;
+    hudHeritability.textContent = m.heritability.toFixed(2);
+    hudHeritabilityAvg.textContent = `avg ${m.heritabilityAvg.toFixed(2)}`;
+    hudSweep.textContent = m.selectiveSweep.toFixed(2);
+    hudSweepAvg.textContent = `avg ${m.selectiveSweepAvg.toFixed(2)}`;
+    hudInfo.textContent = m.informationAccumulation.toFixed(2);
+    hudInfoAvg.textContent = `avg ${m.informationAccumulationAvg.toFixed(2)}`;
+    hudParasite.textContent = m.parasiteFraction.toFixed(2);
+
+    drawSparkline(sparkHeritability, w.metrics.getSparklineSeriesS2("heritability"), {
+      color: "#d4a5ff",
+      threshold: s2.heritability,
+    });
+    drawSparkline(sparkSweep, w.metrics.getSparklineSeriesS2("selectiveSweep"), {
+      color: "#ff9f7a",
+      threshold: s2.selectiveSweepTopShare,
+    });
+    drawSparkline(sparkInfo, w.metrics.getSparklineSeriesS2("informationAccumulation"), {
+      color: "#89f0c2",
+      threshold: s2.informationAccumulationRatio,
+    });
+    drawSparkline(sparkParasite, w.metrics.getSparklineSeriesS2("parasiteFraction"), {
+      color: "#ff6b8a",
+    });
+  }
 }
 
 function frame(now) {
@@ -168,6 +211,9 @@ function frame(now) {
     world.fields.drawHeatmap(ctx, camera);
   }
   world.particles.draw(ctx, camera);
+  if (world.replicator) {
+    world.replicator.draw(ctx, camera);
+  }
   updateHud(world);
 }
 
@@ -190,7 +236,10 @@ function bindControls(w) {
 }
 
 async function main() {
-  presetRef = await loadPreset();
+  const params = new URLSearchParams(window.location.search);
+  presetName = parsePresetFromUrl(params, "stage0-default");
+  presetRef = await loadPreset(presetName);
+  presetRef._name = presetName;
   const seed = parseSeedFromUrl(presetRef.sim.seed);
 
   world = new World(presetRef, seed);

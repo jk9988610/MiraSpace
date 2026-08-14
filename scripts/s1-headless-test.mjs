@@ -3,13 +3,10 @@
  * S1 headless validation: seed reproducibility, pause, 10 min long run.
  * Run: node scripts/s1-headless-test.mjs
  */
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { World } from "../site/js/world.js";
+import { loadPresetSync } from "./preset-loader.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const preset = JSON.parse(readFileSync(join(__dirname, "../site/data/presets/stage0-default.json"), "utf8"));
+const preset = loadPresetSync("stage0-default");
 
 function stateFingerprint(world) {
   const parts = world.particles.list
