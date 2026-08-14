@@ -1,4 +1,6 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
+import { decodeSequence, computeEffectivePhenotype } from "./gene-expression.js";
+import { dominantInteriorSequence } from "./gene-flux.js";
 
 /**
  * Colony: persistent adhesion between chemoton vesicles after fission.
@@ -109,6 +111,74 @@ export class Colony {
       if (v) {
         v.colonyId = null;
         v.links = [];
+      }
+    }
+  }
+
+  /**
+   * E5: set effectiveM/T from local fields (does not mutate sequence).
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {import('./fields.js').Fields | null} fields
+   * @param {import('./replicator.js').Replicator | null} replicator
+   */
+  updatePhenotypes(vesicle, fields, replicator) {
+    if (!fields?.ecologyEnabled || !replicator) return;
+
+    const multiMemberIds = new Set();
+    for (const colony of this.list) {
+      if (colony.memberVesicleIds.length >= 2) {
+        for (const id of colony.memberVesicleIds) multiMemberIds.add(id);
+      }
+    }
+
+    for (const v of vesicle.list) {
+      if (!v.chemoton) continue;
+      if (!multiMemberIds.has(v.id)) {
+        delete v.chemoton.effectiveM;
+        delete v.chemoton.effectiveT;
+        delete v.chemoton.effectiveArchetype;
+        delete v.chemoton.genotypeArchetype;
+      }
+    }
+
+    for (const colony of this.list) {
+      const members = colony.memberVesicleIds
+        .map((id) => vesicle.byId(id))
+        .filter((v) => v?.chemoton);
+
+      if (members.length < 2) continue;
+
+      let sumDOC = 0;
+      let sumLight = 0;
+      const samples = [];
+
+      for (const m of members) {
+        const localDOC = fields.sampleDOC(m.x, m.y);
+        const localLight = 1;
+        sumDOC += localDOC;
+        sumLight += localLight;
+        samples.push({ m, localDOC, localLight });
+      }
+
+      const meanDOC = sumDOC / members.length;
+      const meanLight = sumLight / members.length;
+
+      for (const { m, localDOC, localLight } of samples) {
+        const sequence = dominantInteriorSequence(m, replicator);
+        if (!sequence) continue;
+
+        const decoded = decodeSequence(sequence);
+        const pheno = computeEffectivePhenotype(decoded, {
+          localDOC,
+          localLight,
+          meanDOC,
+          meanLight,
+        });
+        const c = m.chemoton;
+        c.genotypeArchetype = decoded.archetype;
+        c.effectiveM = pheno.effectiveM;
+        c.effectiveT = pheno.effectiveT;
+        c.effectiveArchetype = pheno.effectiveArchetype;
       }
     }
   }
@@ -316,13 +386,32 @@ export class Colony {
     let withLabor = 0;
     for (const colony of this.list) {
       const roles = new Set();
+      const effectiveArchetypes = new Set();
       for (const id of colony.memberVesicleIds) {
         const v = vesicle.byId(id);
         if (v?.chemoton?.role) roles.add(v.chemoton.role);
+        const eff = v?.chemoton?.effectiveArchetype ?? v?.chemoton?.archetype;
+        if (eff) effectiveArchetypes.add(eff);
       }
-      if (roles.size >= 2) withLabor += 1;
+      if (roles.size >= 2 || effectiveArchetypes.size >= 2) withLabor += 1;
     }
     return withLabor / this.list.length;
+  }
+
+  /** @param {import('./vesicle.js').Vesicle} vesicle */
+  phenotypicArchetypeRichness(vesicle) {
+    let best = 0;
+    for (const colony of this.list) {
+      if (colony.memberVesicleIds.length < 2) continue;
+      const archs = new Set();
+      for (const id of colony.memberVesicleIds) {
+        const v = vesicle.byId(id);
+        const eff = v?.chemoton?.effectiveArchetype ?? v?.chemoton?.archetype;
+        if (eff) archs.add(eff);
+      }
+      best = Math.max(best, archs.size);
+    }
+    return best;
   }
 
   /** @param {import('./vesicle.js').Vesicle} vesicle */

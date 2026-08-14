@@ -4,7 +4,7 @@
  * Run: node scripts/smoke-test.mjs
  */
 import { loadPresetSync } from "./preset-loader.mjs";
-import { runSimSeconds, timed } from "./test-utils.mjs";
+import { runSimSeconds, runSimTicks, timed } from "./test-utils.mjs";
 import { buildReport } from "./test-report.mjs";
 import {
   carbonBudgetWithinTolerance,
@@ -19,6 +19,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SEED = 42;
 const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45, stage5: 45, stageEarth: 45 };
+const EARTH_SMOKE_TICKS = 1350;
 const SMOKE_WALL_MS = 12000;
 
 /**
@@ -59,7 +60,9 @@ export function runSmoke(opts = {}) {
         carbonBefore = estimateCarbonPool(w0.fields, w0.vesicle);
         o2Start = w0.fields.globalO2;
       }
-      const w = runSimSeconds(preset, SEED, simSeconds);
+      const w = stageKey === "stageEarth"
+        ? runSimTicks(preset, SEED, EARTH_SMOKE_TICKS)
+        : runSimSeconds(preset, SEED, simSeconds);
 
       if (stageKey === "stage0") {
         const pass = w.tickCount > 0 && w.particles.count() > 0;
@@ -148,11 +151,16 @@ export function runSmoke(opts = {}) {
     encoding: "utf8",
     cwd: join(__dirname, ".."),
   });
+  const phenoProc = spawnSync(process.execPath, [join(__dirname, "test-phenotype-e5.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
 
   const checks = [
     ...result.checks,
     { id: "geneExpressionDecode", pass: (geneProc.status ?? 1) === 0 },
     { id: "geneFluxCoupling", pass: (fluxProc.status ?? 1) === 0 },
+    { id: "phenotypicDifferentiation", pass: (phenoProc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);

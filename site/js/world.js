@@ -101,6 +101,9 @@ export class World {
 
     let replicatorEvents = null;
     if (this.replicator) {
+      if (this.colony && this.vesicle) {
+        this.colony.updatePhenotypes(this.vesicle, this.fields, this.replicator);
+      }
       if (this.chemoton && this.vesicle) {
         for (const v of this.vesicle.list) {
           this.chemoton.updateMetabolism(

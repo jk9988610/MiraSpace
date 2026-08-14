@@ -130,8 +130,14 @@ export function applyGeneFluxForVesicle(
   const biomassFactor = v.biomass ?? 0;
 
   const sequence = dominantInteriorSequence(v, replicator);
+  const genotype = sequence ? decodeSequence(sequence) : decodeSequence([]);
+  const overrides = {};
+  if (c.effectiveM != null && c.effectiveT != null) {
+    overrides.effectiveM = c.effectiveM;
+    overrides.effectiveT = c.effectiveT;
+  }
   const decoded = sequence
-    ? decodeSequence(sequence)
+    ? decodeSequence(sequence, overrides)
     : decodeSequence([]);
 
   const env = fields.sampleExpressionEnv(v.x, v.y, { light: 1 });
@@ -209,7 +215,7 @@ export function applyGeneFluxForVesicle(
     c.membraneHealth = clamp01(c.membraneHealth + gain * 0.02 * dt * 30);
   }
 
-  c.archetype = decoded.archetype;
+  c.archetype = genotype.archetype;
   c.effectiveArchetype = decoded.archetype;
   c._lastGeneFlux = flux;
   c._lastExpressionE = E;

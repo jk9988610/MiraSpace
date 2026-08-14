@@ -64,6 +64,30 @@ export function buildSnapshotNarrative(ctx) {
     );
   }
 
+  if (w.fields?.ecologyEnabled && w.colony && w.vesicle) {
+    const phenoLines = [];
+    for (const colony of w.colony.list) {
+      if (colony.memberVesicleIds.length < 2) continue;
+      const members = colony.memberVesicleIds.map((id) => {
+        const v = w.vesicle.byId(id);
+        if (!v?.chemoton) return null;
+        return {
+          vesicleId: id,
+          genotypeArchetype: v.chemoton.genotypeArchetype ?? v.chemoton.archetype,
+          effectiveArchetype: v.chemoton.effectiveArchetype ?? v.chemoton.archetype,
+          effectiveM: v.chemoton.effectiveM,
+          effectiveT: v.chemoton.effectiveT,
+        };
+      }).filter(Boolean);
+      if (members.length > 0) {
+        phenoLines.push(`群体 ${colony.id}：${members.map((mem) => `${mem.effectiveArchetype}`).join("、")}`);
+      }
+    }
+    if (phenoLines.length > 0) {
+      paragraphs.push(`E5 表观分工：${phenoLines.join("；")}。`);
+    }
+  }
+
   return paragraphs.join("\n\n");
 }
 
@@ -130,6 +154,23 @@ export function buildSnapshotText(ctx) {
     lines.push(`divisionOfLabor: ${m.divisionOfLabor} (avg ${m.divisionOfLaborAvg})`);
     lines.push(`developmentalPattern: ${m.developmentalPattern} (avg ${m.developmentalPatternAvg})`);
     lines.push(`colonyCount: ${m.colonyCount}`);
+  }
+
+  if (w.fields?.ecologyEnabled && w.colony && w.vesicle) {
+    lines.push("", "── E5 phenotypic ──");
+    lines.push(`phenotypicArchetypeRichness: ${m.phenotypicArchetypeRichness ?? 0}`);
+    for (const colony of w.colony.list) {
+      if (colony.memberVesicleIds.length < 2) continue;
+      for (const id of colony.memberVesicleIds) {
+        const v = w.vesicle.byId(id);
+        if (!v?.chemoton) continue;
+        lines.push(
+          `${colony.id}/${id}: genotype=${v.chemoton.genotypeArchetype ?? v.chemoton.archetype}`
+          + ` effectiveArchetype=${v.chemoton.effectiveArchetype ?? v.chemoton.archetype}`
+          + ` effectiveM=${v.chemoton.effectiveM ?? "—"} effectiveT=${v.chemoton.effectiveT ?? "—"}`,
+        );
+      }
+    }
   }
 
   lines.push("", "── 阶段 Tab ──");

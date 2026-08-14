@@ -10,6 +10,17 @@ export function runTicks(world, n) {
 /**
  * @param {object} preset
  * @param {number} seed
+ * @param {number} ticks
+ */
+export function runSimTicks(preset, seed, ticks) {
+  const world = new World(preset, seed);
+  runTicks(world, ticks);
+  return world;
+}
+
+/**
+ * @param {object} preset
+ * @param {number} seed
  * @param {number} seconds
  */
 export function runSimSeconds(preset, seed, seconds) {

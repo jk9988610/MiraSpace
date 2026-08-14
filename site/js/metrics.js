@@ -101,6 +101,7 @@ export class Metrics {
     this.globalO2Avg = this.globalO2Level;
     this.cyanophytePresence = 0;
     this.heterotrophPresence = 0;
+    this.phenotypicArchetypeRichness = 0;
     this._initialGlobalO2 = preset.atmosphere?.globalO2 ?? 0.02;
     this._historyEarth = [];
   }
@@ -156,7 +157,7 @@ export class Metrics {
     }
 
     if (this.earthEnabled && vesicle && chemoton && fields) {
-      this._recordEarth(simTime, vesicle, chemoton, fields);
+      this._recordEarth(simTime, vesicle, chemoton, colony, fields);
     }
 
     this._intervalDimersCreated = 0;
@@ -536,9 +537,10 @@ export class Metrics {
    * @param {number} simTime
    * @param {import('./vesicle.js').Vesicle} vesicle
    * @param {import('./chemoton.js').Chemoton} chemoton
+   * @param {import('./colony.js').Colony | null} colony
    * @param {import('./fields.js').Fields} fields
    */
-  _recordEarth(simTime, vesicle, chemoton, fields) {
+  _recordEarth(simTime, vesicle, chemoton, colony, fields) {
     const archetypes = new Set();
     let producerBiomass = 0;
     let totalBiomass = 0;
@@ -547,7 +549,7 @@ export class Metrics {
 
     for (const v of vesicle.list) {
       if (!v.chemoton) continue;
-      const arch = v.chemoton.archetype ?? v.chemoton.effectiveArchetype ?? "leaky_heterotroph";
+      const arch = v.chemoton.effectiveArchetype ?? v.chemoton.archetype ?? "leaky_heterotroph";
       archetypes.add(arch);
       const bm = v.biomass ?? 0;
       totalBiomass += bm;
@@ -573,9 +575,11 @@ export class Metrics {
     this.globalCO2Level = fields.globalCO2;
     this.globalO2Rise = fields.globalO2 - this._initialGlobalO2;
     this.heterotrophPresence = heterotrophCount > 0 ? 1 : 0;
+    this.phenotypicArchetypeRichness = colony?.phenotypicArchetypeRichness(vesicle) ?? 0;
 
     this._pushHistoryEarth(simTime, {
       trophicRichness: this.trophicRichness,
+      phenotypicArchetypeRichness: this.phenotypicArchetypeRichness,
       producerBiomass: this.producerBiomass,
       netOCFlux: this.netOCFlux,
       globalO2: this.globalO2Level,
@@ -679,6 +683,7 @@ export class Metrics {
       globalO2Avg: this.globalO2Avg,
       cyanophytePresence: this.cyanophytePresence,
       heterotrophPresence: this.heterotrophPresence,
+      phenotypicArchetypeRichness: this.phenotypicArchetypeRichness,
     };
   }
 }

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Earth ecology headless validation (E4).
+ * Tick-based (no wall-clock soak labels).
  * Quick: node scripts/s-earth-headless-test.mjs
  * Acceptance: node scripts/s-earth-headless-test.mjs --acceptance
  */
 import { World } from "../site/js/world.js";
 import { loadPresetSync } from "./preset-loader.mjs";
-import { runSimSeconds } from "./test-utils.mjs";
+import { runSimTicks } from "./test-utils.mjs";
 import {
   carbonBudgetWithinTolerance,
   estimateCarbonPool,
@@ -14,6 +15,10 @@ import {
 
 const earthPreset = loadPresetSync("stage-earth-default");
 const SEEDS = [42, 7, 99];
+/** 90 sim s at dt ≈ 1/30 */
+const EARTH_QUICK_TICKS = 2700;
+/** 600 sim s at dt ≈ 1/30 */
+const EARTH_ACCEPTANCE_TICKS = 18000;
 
 function testEcologyModules() {
   const w = new World({ ...earthPreset, _name: "stage-earth-default" }, 42);
@@ -27,13 +32,13 @@ function testEcologyModules() {
   };
 }
 
-function testSeedRun(seed, seconds) {
+function testSeedRun(seed, ticks) {
   const preset = { ...earthPreset, _name: "stage-earth-default" };
   const w0 = new World(preset, seed);
   const carbonBefore = estimateCarbonPool(w0.fields, w0.vesicle);
   const o2Start = w0.fields.globalO2;
 
-  const w = runSimSeconds(preset, seed, seconds);
+  const w = runSimTicks(preset, seed, ticks);
   const carbonAfter = estimateCarbonPool(w.fields, w.vesicle);
   const m = w.metrics;
 
@@ -48,7 +53,8 @@ function testSeedRun(seed, seconds) {
 
   return {
     seed,
-    seconds,
+    ticks,
+    simSeconds: Number((ticks * w.dt).toFixed(1)),
     globalO2Start: Number(o2Start.toFixed(4)),
     globalO2End: Number(w.fields.globalO2.toFixed(4)),
     globalO2Rise: Number(m.globalO2Rise.toFixed(4)),
@@ -61,11 +67,11 @@ function testSeedRun(seed, seconds) {
 }
 
 export function runQuick() {
-  const run = testSeedRun(42, 90);
+  const run = testSeedRun(42, EARTH_QUICK_TICKS);
   const tests = [
     testEcologyModules(),
     {
-      name: "90 sim s earth metrics recorded",
+      name: `${EARTH_QUICK_TICKS} ticks earth metrics recorded`,
       pass: run.trophicRichness >= 1 && run.geneFluxTicks > 0,
       detail: run,
     },
@@ -74,11 +80,11 @@ export function runQuick() {
 }
 
 export function runAcceptance() {
-  const seedRuns = SEEDS.map((seed) => testSeedRun(seed, 600));
+  const seedRuns = SEEDS.map((seed) => testSeedRun(seed, EARTH_ACCEPTANCE_TICKS));
   const tests = [
     testEcologyModules(),
     ...seedRuns.map((run) => ({
-      name: `600 sim s earth closure (seed=${run.seed})`,
+      name: `${EARTH_ACCEPTANCE_TICKS} ticks earth closure (seed=${run.seed})`,
       pass: Object.values(run.checks).every(Boolean),
       detail: run,
     })),

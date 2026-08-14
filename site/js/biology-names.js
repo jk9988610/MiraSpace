@@ -129,6 +129,7 @@ export const METRICS = {
   globalO2Rise: { zh: "氧上升幅度", en: "O₂ rise" },
   cyanophytePresence: { zh: "固碳菌出现", en: "Cyanophyte presence" },
   heterotrophPresence: { zh: "异养出现", en: "Heterotroph presence" },
+  phenotypicArchetypeRichness: { zh: "表观营养级数", en: "Phenotypic archetype richness" },
 };
 
 /** @param {BioLabel} label */

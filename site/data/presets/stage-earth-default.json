@@ -9,8 +9,9 @@
     "predatorTransfer": 0.08,
     "diffIntervalTicks": 30,
     "nucleationProfiles": [
-      { "m": 0, "t": 0, "r": 0, "weight": 0.45 },
-      { "m": 1, "t": 0, "r": 0, "weight": 0.1 },
+      { "m": 0, "t": 0, "r": 8, "weight": 0.35 },
+      { "m": 0, "t": 0, "r": 0, "weight": 0.2 },
+      { "m": 1, "t": 0, "r": 8, "weight": 0.08 },
       { "m": 2, "t": 1, "r": 0, "weight": 0.18 },
       { "m": 2, "t": 2, "r": 0, "weight": 0.05 },
       { "m": 3, "t": 3, "r": 8, "weight": 0.14 },
