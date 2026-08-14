@@ -4,6 +4,8 @@
 
 **生物学命名与粒子表达**：界面与文档优先使用生物学类比称谓（酶、核酸样聚合物、原细胞膜泡等）；代码内部仍用 `monomer`、`strand` 等稳定 id。详见 [`docs/BIOLOGY_NOMENCLATURE.md`](docs/BIOLOGY_NOMENCLATURE.md) 与 `site/js/biology-names.js`。
 
+**米拉地球（规划中）**：基因表达驱动营养级与气体循环的设计见 [`docs/EARTH_GENE_EXPRESSION.md`](docs/EARTH_GENE_EXPRESSION.md)；分阶段实现进度见 [`docs/EARTH_ECOSPHERE_ROADMAP.md`](docs/EARTH_ECOSPHERE_ROADMAP.md)。
+
 ## 在线访问
 
 https://jk9988610.github.io/MiraSpace/
@@ -160,6 +162,8 @@ node scripts/s3-headless-test.mjs --acceptance
 ```
 docs/
 ├── BIOLOGY_NOMENCLATURE.md   # 粒子↔生物学映射与路线图
+├── EARTH_GENE_EXPRESSION.md  # 基因表达与营养级规格（已确认）
+├── EARTH_ECOSPHERE_ROADMAP.md # 米拉地球分阶段进度
 site/
 ├── js/
 │   ├── biology-names.js      # 中英文生物学显示名
