@@ -12,7 +12,7 @@
     <div class="portrait-overlay__content">
       <h1>MiraSpace</h1>
       <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
-      <p class="portrait-overlay__hint">米拉空间 · S1 / S2 / S3</p>
+      <p class="portrait-overlay__hint">米拉空间 · S1 / S2 / S3 / S4</p>
     </div>
   </div>
 
@@ -125,6 +125,34 @@
         <span id="hud-vesicle-metric" class="hud__metric-value">—</span>
         <span class="hud__metric-avg">观测</span>
         <canvas id="spark-vesicle-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+    </div>
+    <div id="hud-s4" hidden>
+      <hr class="hud__divider">
+      <p class="hud__section">S4</p>
+      <div class="hud__metric">
+        <span class="hud__metric-label">chemotonCoherence</span>
+        <span id="hud-coherence" class="hud__metric-value">—</span>
+        <span id="hud-coherence-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-coherence" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">lineagePersistence</span>
+        <span id="hud-lineage" class="hud__metric-value">—</span>
+        <span id="hud-lineage-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-lineage" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">storageFidelity</span>
+        <span id="hud-storage" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-storage" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">chemotonCount</span>
+        <span id="hud-chemoton-count" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-chemoton-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
     <div class="hud__controls">

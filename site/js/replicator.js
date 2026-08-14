@@ -51,8 +51,11 @@ export class Replicator {
    * @param {import('./fields.js').Fields} fields
    * @param {import('./particles.js').Particles} particles
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {import('./vesicle.js').Vesicle | null} [vesicle]
+   * @param {import('./chemoton.js').Chemoton | null} [chemoton]
+   * @param {number} [simTime]
    */
-  step(dt, fields, particles, rng) {
+  step(dt, fields, particles, rng, vesicle = null, chemoton = null, simTime = 0) {
     const events = {
       nucleations: 0,
       replications: 0,
@@ -63,7 +66,7 @@ export class Replicator {
     };
 
     this._tryNucleation(fields, particles, rng, events);
-    this._integrate(dt, fields, rng);
+    this._integrate(dt, fields, rng, vesicle);
 
     for (const strand of [...this.list]) {
       if (strand.energy <= 0) {
@@ -73,7 +76,9 @@ export class Replicator {
       }
 
       if (this.list.length >= this.cfg.maxPopulation) continue;
-      const replicated = this._tryReplication(strand, dt, fields, particles, rng, events);
+      const replicated = this._tryReplication(
+        strand, dt, fields, particles, rng, events, vesicle, chemoton, simTime,
+      );
       if (replicated) events.replications += 1;
     }
 
@@ -136,12 +141,18 @@ export class Replicator {
    * @param {number} dt
    * @param {import('./fields.js').Fields} fields
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {import('./vesicle.js').Vesicle | null} [vesicle]
    */
-  _integrate(dt, fields, rng) {
+  _integrate(dt, fields, rng, vesicle = null) {
     for (const strand of this.list) {
+      let maintMult = 1;
+      if (strand.vesicleId && vesicle) {
+        const v = vesicle.byId(strand.vesicleId);
+        if (v?.chemoton?.storageMode === "redundant") maintMult = 1.2;
+      }
       const uptake = Math.min(fields.sampleEnergy(strand.x, strand.y), 0.06) * dt * 2.5;
       fields.consumeEnergy(strand.x, strand.y, uptake);
-      strand.energy += uptake - this.cfg.maintenanceCost * dt;
+      strand.energy += uptake - this.cfg.maintenanceCost * dt * maintMult;
 
       const noise = this.cfg.mobility * 0.25;
       strand.vx = (strand.vx + (rng.next() - 0.5) * noise * dt) * 0.98;
@@ -163,8 +174,11 @@ export class Replicator {
    * @param {import('./particles.js').Particles} particles
    * @param {ReturnType<import('./camera.js').createRng>} rng
    * @param {{ replicationPairs: object[] }} events
+   * @param {import('./vesicle.js').Vesicle | null} vesicle
+   * @param {import('./chemoton.js').Chemoton | null} chemoton
+   * @param {number} simTime
    */
-  _tryReplication(parent, dt, fields, particles, rng, events) {
+  _tryReplication(parent, dt, fields, particles, rng, events, vesicle, chemoton, simTime) {
     const monomers = this._countMonomersNear(parent, particles);
     if (monomers < this.cfg.monomersRequired) return false;
     if (parent.energy < this.cfg.replicationCost) return false;
@@ -172,10 +186,24 @@ export class Replicator {
     let rate = this.cfg.replicationRateBase;
     rate *= 1 + this._motifBonus(parent.sequence);
     rate *= Math.min(1.2, fields.sampleEnergy(parent.x, parent.y) + 0.2);
-    if (rng.next() >= rate * dt) return false;
+
+    let parentVesicle = null;
+    if (parent.vesicleId && vesicle && chemoton) {
+      parentVesicle = vesicle.byId(parent.vesicleId);
+      if (parentVesicle) {
+        rate *= chemoton.replicationMultiplier(parentVesicle);
+      }
+    }
+
+    const roll = rng.next();
+    const success = roll < rate * dt;
+    if (parentVesicle && chemoton) {
+      chemoton.logReplication(parentVesicle, simTime, success);
+    }
+    if (!success) return false;
 
     parent.energy -= this.cfg.replicationCost;
-    const childSeq = this._mutateSequence(parent.sequence, rng);
+    const childSeq = this._mutateSequence(parent.sequence, rng, parentVesicle);
     const offset = 6;
     const child = this._createStrand(
       childSeq,
@@ -217,10 +245,14 @@ export class Replicator {
   /**
    * @param {number[]} sequence
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {object | null} [parentVesicle]
    */
-  _mutateSequence(sequence, rng) {
+  _mutateSequence(sequence, rng, parentVesicle = null) {
     const out = sequence.slice();
-    const rate = this.cfg.mutationRate;
+    let rate = this.cfg.mutationRate;
+    if (parentVesicle?.chemoton?.storageMode === "redundant") {
+      rate *= 0.5;
+    }
     for (let i = 0; i < out.length; i += 1) {
       if (rng.next() < rate) out[i] = out[i] === 0 ? 1 : 0;
     }

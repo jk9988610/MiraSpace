@@ -3,6 +3,7 @@ import { Particles } from "./particles.js";
 import { Metrics } from "./metrics.js";
 import { Replicator } from "./replicator.js";
 import { Vesicle } from "./vesicle.js";
+import { Chemoton } from "./chemoton.js";
 import { createRng } from "./camera.js";
 
 /**
@@ -36,14 +37,18 @@ export class World {
     this.replicator = preset.replicator
       ? new Replicator(preset, this.width, this.height, this.rng)
       : null;
+    this.chemoton = preset.chemoton
+      ? new Chemoton(preset)
+      : null;
     this.vesicle = preset.vesicle
-      ? new Vesicle(preset, this.width, this.height, this.rng)
+      ? new Vesicle(preset, this.width, this.height, this.rng, this.chemoton)
       : null;
     this.metrics = new Metrics(
       preset,
       this.particles.typeCountsSnapshot(),
       this.replicator,
       this.vesicle,
+      this.chemoton,
     );
 
     this.showGrid = preset.render.showGrid;
@@ -76,7 +81,28 @@ export class World {
 
     let replicatorEvents = null;
     if (this.replicator) {
-      replicatorEvents = this.replicator.step(this.dt, this.fields, this.particles, this.rng);
+      if (this.chemoton && this.vesicle) {
+        for (const v of this.vesicle.list) {
+          this.chemoton.updateMetabolism(
+            v,
+            this.particles,
+            this.fields,
+            this.dt,
+            this.width,
+            this.height,
+            this.replicator,
+          );
+        }
+      }
+      replicatorEvents = this.replicator.step(
+        this.dt,
+        this.fields,
+        this.particles,
+        this.rng,
+        this.vesicle,
+        this.chemoton,
+        this.simTime,
+      );
     }
 
     let vesicleEvents = null;
@@ -87,6 +113,8 @@ export class World {
         this.particles,
         this.replicator,
         this.rng,
+        this.simTime,
+        replicatorEvents,
       );
     }
 
@@ -99,6 +127,7 @@ export class World {
       replicatorEvents,
       this.vesicle,
       vesicleEvents,
+      this.chemoton,
     );
   }
 

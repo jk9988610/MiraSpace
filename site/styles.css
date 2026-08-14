@@ -194,7 +194,8 @@ body {
 }
 
 .hud--wide,
-.hud--s3 {
+.hud--s3,
+.hud--s4 {
   max-height: calc(100vh - 1.5rem);
   overflow-y: auto;
 }
