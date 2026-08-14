@@ -128,6 +128,9 @@ python3 -m http.server 8080
 # AI / 日常：≤5 s 墙钟，输出可复制 Markdown 报告
 node scripts/run-suite.mjs --smoke
 
+# 仅米拉地球（preset + 里程碑/Tab 快验）
+node scripts/run-suite.mjs --smoke-earth
+
 # 科学结案：600 sim s × seeds 42/7/99（勿在 AI 对话中默认跑）
 node scripts/run-suite.mjs --acceptance
 node scripts/run-suite.mjs --acceptance --preset=stage3-default
