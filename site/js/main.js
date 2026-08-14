@@ -1,7 +1,14 @@
 import { Camera } from "./camera.js";
 import { World } from "./world.js";
 import { drawSparkline } from "./sparkline.js";
-import { loadPreset, parsePresetFromUrl } from "./preset.js";
+import { loadPreset } from "./preset.js";
+import {
+  STAGE_TABS,
+  applyHudVisibility,
+  createStageNav,
+  parseStageFromUrl,
+  syncStageUrl,
+} from "./stage-nav.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -9,6 +16,7 @@ const canvas = document.getElementById("world-canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 
 const portraitOverlay = document.getElementById("portrait-overlay");
+const stageNavContainer = document.getElementById("stage-nav");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
 const hudPreset = document.getElementById("hud-preset");
@@ -86,8 +94,13 @@ let camera = null;
 /** @type {object | null} */
 let presetRef = null;
 let presetName = "stage0-default";
+let currentSeed = 42;
+/** @type {import('./stage-nav.js').STAGE_TABS[number]} */
+let activeTab = STAGE_TABS[0];
 let dpr = 1;
 let lastFrameTime = performance.now();
+/** @type {ReturnType<typeof createStageNav> | null} */
+let stageNav = null;
 
 function parseSeedFromUrl(defaultSeed) {
   const params = new URLSearchParams(window.location.search);
@@ -121,6 +134,17 @@ function resizeCanvas() {
   if (camera) {
     camera.setViewport(cssW, cssH);
   }
+}
+
+/**
+ * @param {import('./camera.js').Camera} cam
+ * @param {World} w
+ */
+function resetCameraCenter(cam, w) {
+  cam.worldWidth = w.width;
+  cam.worldHeight = w.height;
+  cam.camX = w.width / 2;
+  cam.camY = w.height / 2;
 }
 
 function drawBackground() {
@@ -164,6 +188,7 @@ function drawGrid(cam, w) {
   }
 }
 
+/** @param {World} w */
 function updateHud(w) {
   hudTick.textContent = String(w.tickCount);
   hudTime.textContent = `${w.simTime.toFixed(1)} s`;
@@ -194,11 +219,7 @@ function updateHud(w) {
     threshold: s1.negentropyFluxRatio,
   });
 
-  if (w.replicator) {
-    hudRowStrands.hidden = false;
-    hudS2.hidden = false;
-    hud.classList.add("hud--wide");
-    hudStage.textContent = "S1+S2";
+  if (w.replicator && !hudS2.hidden) {
     hudStrands.textContent = String(m.strandCount ?? 0);
 
     const s2 = presetRef.metricsThresholdsS2;
@@ -227,12 +248,7 @@ function updateHud(w) {
     });
   }
 
-  if (w.vesicle) {
-    hudS3.hidden = false;
-    hudRowVesicles.hidden = false;
-    hud.classList.add("hud--s3");
-    hudStage.textContent = "S1+S2+S3";
-
+  if (w.vesicle && !hudS3.hidden) {
     const s3 = presetRef.metricsThresholdsS3;
     hudVesicles.textContent = String(m.vesicleCount ?? 0);
     if (hudVesicleMetric) hudVesicleMetric.textContent = String(m.vesicleCount ?? 0);
@@ -259,11 +275,7 @@ function updateHud(w) {
     });
   }
 
-  if (w.chemoton) {
-    hudS4.hidden = false;
-    hud.classList.add("hud--s4");
-    hudStage.textContent = "S1+S2+S3+S4";
-
+  if (w.chemoton && !hudS4.hidden) {
     const s4 = presetRef.metricsThresholdsS4;
     hudCoherence.textContent = (m.chemotonCoherence ?? 0).toFixed(2);
     hudCoherenceAvg.textContent = `avg ${(m.chemotonCoherenceAvg ?? 0).toFixed(2)}`;
@@ -288,11 +300,7 @@ function updateHud(w) {
     });
   }
 
-  if (w.colony) {
-    hudS5.hidden = false;
-    hud.classList.add("hud--s5");
-    hudStage.textContent = "S1+S2+S3+S4+S5";
-
+  if (w.colony && !hudS5.hidden) {
     const s5 = presetRef.metricsThresholdsS5;
     hudPersistence.textContent = (m.multicellularPersistence ?? 0).toFixed(2);
     hudPersistenceAvg.textContent = `avg ${(m.multicellularPersistenceAvg ?? 0).toFixed(2)}`;
@@ -351,37 +359,98 @@ function frame(now) {
   updateHud(world);
 }
 
-function bindControls(w) {
+function bindControls() {
   btnPause.addEventListener("click", () => {
-    const paused = w.togglePause();
+    if (!world) return;
+    const paused = world.togglePause();
     btnPause.textContent = paused ? "继续" : "暂停";
     btnPause.setAttribute("aria-pressed", String(paused));
   });
 
   btnGrid.addEventListener("click", () => {
-    const on = w.toggleGrid();
+    if (!world) return;
+    const on = world.toggleGrid();
     btnGrid.setAttribute("aria-pressed", String(on));
   });
 
   btnField.addEventListener("click", () => {
-    const on = w.toggleFieldHeatmap();
+    if (!world) return;
+    const on = world.toggleFieldHeatmap();
     btnField.setAttribute("aria-pressed", String(on));
   });
 }
 
-async function main() {
-  const params = new URLSearchParams(window.location.search);
-  presetName = parsePresetFromUrl(params, "stage0-default");
+function resetControlUi(w) {
+  world = w;
+  world.paused = false;
+  world.accumulator = 0;
+  btnPause.textContent = "暂停";
+  btnPause.setAttribute("aria-pressed", "false");
+  btnGrid.setAttribute("aria-pressed", String(w.showGrid));
+  btnField.setAttribute("aria-pressed", String(w.showFieldHeatmap));
+}
+
+/**
+ * Load preset and rebuild world (no cross-stage state).
+ * @param {import('./stage-nav.js').STAGE_TABS[number]} tab
+ * @param {number} seed
+ * @param {{ toast?: boolean }} [opts]
+ */
+async function switchStage(tab, seed, opts = {}) {
+  presetName = tab.preset;
+  activeTab = tab;
+  currentSeed = seed;
+
   presetRef = await loadPreset(presetName);
   presetRef._name = presetName;
-  const seed = parseSeedFromUrl(presetRef.sim.seed);
 
-  world = new World(presetRef, seed);
+  const nextWorld = new World(presetRef, seed);
+  resetControlUi(nextWorld);
+
+  if (!camera) {
+    camera = new Camera(nextWorld.width, nextWorld.height);
+    camera.attachPanHandlers(canvas);
+    resizeCanvas();
+  } else {
+    resetCameraCenter(camera, nextWorld);
+    resizeCanvas();
+  }
+
+  applyHudVisibility(tab);
+  syncStageUrl(seed, presetName);
+  stageNav?.setActiveTab(tab);
+  if (opts.toast) {
+    stageNav?.showToast(`已切换至：${tab.label}`);
+  }
+
+  lastFrameTime = performance.now();
+}
+
+async function main() {
+  const params = new URLSearchParams(window.location.search);
+  activeTab = parseStageFromUrl(params);
+  presetName = activeTab.preset;
+
+  presetRef = await loadPreset(presetName);
+  presetRef._name = presetName;
+  currentSeed = parseSeedFromUrl(presetRef.sim.seed);
+
+  stageNav = createStageNav(stageNavContainer, {
+    getActiveTab: () => activeTab,
+    onSelect: async (tab) => {
+      await switchStage(tab, currentSeed, { toast: true });
+    },
+  });
+
+  world = new World(presetRef, currentSeed);
   camera = new Camera(world.width, world.height);
 
   resizeCanvas();
   camera.attachPanHandlers(canvas);
-  bindControls(world);
+  bindControls();
+  applyHudVisibility(activeTab);
+  stageNav.setActiveTab(activeTab);
+  syncStageUrl(currentSeed, presetName);
 
   window.addEventListener("resize", () => {
     updateOrientationOverlay();
