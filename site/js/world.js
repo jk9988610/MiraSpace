@@ -64,13 +64,14 @@ export class World {
     this.fieldHeatmapMode = defaultHeatmap === "off" ? "off" : defaultHeatmap;
     this.showFieldHeatmap = this.fieldHeatmapMode !== "off";
     this.gridStep = preset.render.gridStep;
+    this.fieldHeatmapCycle = preset.render?.fieldHeatmapCycle ?? ["drive", "energy", "waste", "off"];
   }
 
-  /** Cycle field overlay: drive → energy → waste → off */
+  /** Cycle field overlay modes (preset-configurable). */
   cycleFieldHeatmap() {
-    const order = ["drive", "energy", "waste", "off"];
+    const order = this.fieldHeatmapCycle;
     const idx = order.indexOf(this.fieldHeatmapMode);
-    const next = order[(idx + 1) % order.length];
+    const next = order[(idx >= 0 ? idx + 1 : 0) % order.length];
     this.fieldHeatmapMode = next;
     this.showFieldHeatmap = next !== "off";
     return this.fieldHeatmapMode;

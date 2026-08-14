@@ -137,6 +137,9 @@ export function createControlPanel(container, handlers) {
       drive: "热力·驱动",
       energy: "热力·能量",
       waste: "热力·废物",
+      CO2: "热力·CO₂",
+      O2: "热力·O₂",
+      DOC: "热力·有机碳",
       off: "热力·关",
     };
     btnField.textContent = heatLabels[state.fieldHeatmapMode ?? "off"] ?? "热力";

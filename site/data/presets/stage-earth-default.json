@@ -1,0 +1,32 @@
+{
+  "extends": "stage5-default.json",
+  "geneExpression": {
+    "headerBits": 12,
+    "fluxCoeffs": { "alpha": 0.04, "beta": 0.04, "gamma": 0.03, "delta": 0.02 },
+    "envK": { "CO2": 0.15, "O2": 0.08, "DOC": 0.12, "O2_tox": 0.25, "POC": 0.1, "energy": 0.2 },
+    "F_max": 1.0,
+    "nightFactor": 0.15,
+    "predatorTransfer": 0.08,
+    "diffIntervalTicks": 30
+  },
+  "replicator": {
+    "L0Min": 12,
+    "L0Max": 24
+  },
+  "fields": {
+    "CO2": { "baseline": 0.35, "diffusion": 0.25, "max": 1, "decay": 0 },
+    "O2": { "baseline": 0.02, "diffusion": 0.3, "max": 1, "decay": 0 },
+    "DOC": { "baseline": 0.05, "diffusion": 0.2, "max": 1, "decay": 0.01 },
+    "POC": { "baseline": 0.02, "diffusion": 0.08, "max": 1, "decay": 0.005 }
+  },
+  "atmosphere": {
+    "globalCO2": 0.35,
+    "globalO2": 0.02,
+    "oceanEquilRate": 0.01,
+    "biosphereFeedback": 0.05
+  },
+  "render": {
+    "fieldHeatmapCycle": ["drive", "energy", "CO2", "O2", "DOC", "waste", "off"],
+    "defaultFieldHeatmap": "CO2"
+  }
+}

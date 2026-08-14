@@ -14,6 +14,8 @@ https://jk9988610.github.io/MiraSpace/
 
 - S1 前生物化学：`?seed=42&preset=stage0-default`
 - S5 多细胞生物：`?seed=42&preset=stage5-default`
+- 米拉地球（生态场 E2+）：`?seed=42&preset=stage-earth-default`
+- 米拉地球（生态场）：`?seed=42&preset=stage-earth-default`
 
 ## 本地运行
 

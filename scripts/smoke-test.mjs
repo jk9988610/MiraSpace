@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SEED = 42;
-const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45, stage5: 45 };
+const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45, stage5: 45, stageEarth: 45 };
 const SMOKE_WALL_MS = 12000;
 
 /**
@@ -26,6 +26,7 @@ export function runSmoke(opts = {}) {
     stage3: loadPresetSync("stage3-default"),
     stage4: loadPresetSync("stage4-default"),
     stage5: loadPresetSync("stage5-default"),
+    stageEarth: loadPresetSync("stage-earth-default"),
   };
 
   const filter = opts.preset?.replace(/\.json$/, "");
@@ -36,6 +37,7 @@ export function runSmoke(opts = {}) {
     if (filter === "stage3-default") return key === "stage3";
     if (filter === "stage4-default") return key === "stage4";
     if (filter === "stage5-default") return key === "stage5";
+    if (filter === "stage-earth-default") return key === "stageEarth";
     return key === filter.replace("-default", "");
   });
 
@@ -100,6 +102,15 @@ export function runSmoke(opts = {}) {
         });
         metrics.colonyCount = w.metrics.colonyCount ?? 0;
         metrics.divisionOfLabor = Number((w.metrics.divisionOfLabor ?? 0).toFixed(3));
+      }
+
+      if (stageKey === "stageEarth") {
+        const ecology = w.fields.validateEcologyState();
+        checks.push({ id: "ecologyFieldsBounded", pass: ecology.ok });
+        checks.push({ id: "ecologyChannelsPresent", pass: w.fields.ecologyEnabled && w.fields.CO2 && w.fields.O2 });
+        metrics.globalO2 = Number(w.fields.globalO2.toFixed(4));
+        metrics.globalCO2 = Number(w.fields.globalCO2.toFixed(4));
+        metrics.meanCO2 = Number(w.fields._fieldMean(w.fields.CO2).toFixed(4));
       }
     }
 

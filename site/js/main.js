@@ -59,6 +59,9 @@ const hudPreset = document.getElementById("hud-preset");
 const hudTick = document.getElementById("hud-tick");
 const hudTime = document.getElementById("hud-time");
 const hudParticles = document.getElementById("hud-particles");
+const hudRowAtmosphere = document.getElementById("hud-row-atmosphere");
+const hudGlobalO2 = document.getElementById("hud-global-o2");
+const hudGlobalCO2 = document.getElementById("hud-global-co2");
 const hudSeed = document.getElementById("hud-seed");
 const hudRowStrands = document.getElementById("hud-row-strands");
 const hudStrands = document.getElementById("hud-strands");
@@ -450,6 +453,14 @@ function updateHud(w) {
     drawSparkline(sparkColonyCount, w.metrics.getSparklineSeriesS5("colonyCount"), {
       color: "#7ec8ff",
     });
+  }
+
+  if (w.fields.ecologyEnabled && hudRowAtmosphere) {
+    hudRowAtmosphere.hidden = false;
+    if (hudGlobalO2) hudGlobalO2.textContent = w.fields.globalO2.toFixed(3);
+    if (hudGlobalCO2) hudGlobalCO2.textContent = w.fields.globalCO2.toFixed(3);
+  } else if (hudRowAtmosphere) {
+    hudRowAtmosphere.hidden = true;
   }
 
   milestoneTracker?.check(m, presetRef);
