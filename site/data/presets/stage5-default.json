@@ -1,0 +1,20 @@
+{
+  "extends": "stage4-default.json",
+  "colony": {
+    "linkStrength0": 0.8,
+    "linkDecay": 0.00008,
+    "linkBreakThreshold": 0.2,
+    "maxMembers": 24,
+    "fluxTransferRate": 0.05
+  },
+  "metricsThresholdsS5": {
+    "multicellularPersistenceRatio": 1.5,
+    "divisionOfLaborColonyShare": 0.3,
+    "developmentalPatternScore": 0.15,
+    "sustainSeconds": {
+      "persistence": 120,
+      "labor": 180,
+      "pattern": 180
+    }
+  }
+}

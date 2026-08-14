@@ -63,6 +63,18 @@ const sparkCoherence = document.getElementById("spark-coherence");
 const sparkLineage = document.getElementById("spark-lineage");
 const sparkStorage = document.getElementById("spark-storage");
 const sparkChemotonCount = document.getElementById("spark-chemoton-count");
+const hudS5 = document.getElementById("hud-s5");
+const hudPersistence = document.getElementById("hud-persistence");
+const hudPersistenceAvg = document.getElementById("hud-persistence-avg");
+const hudLabor = document.getElementById("hud-labor");
+const hudLaborAvg = document.getElementById("hud-labor-avg");
+const hudPattern = document.getElementById("hud-pattern");
+const hudPatternAvg = document.getElementById("hud-pattern-avg");
+const hudColonyCount = document.getElementById("hud-colony-count");
+const sparkPersistence = document.getElementById("spark-persistence");
+const sparkLabor = document.getElementById("spark-labor");
+const sparkPattern = document.getElementById("spark-pattern");
+const sparkColonyCount = document.getElementById("spark-colony-count");
 const btnPause = document.getElementById("btn-pause");
 const btnGrid = document.getElementById("btn-grid");
 const btnField = document.getElementById("btn-field");
@@ -275,6 +287,37 @@ function updateHud(w) {
       color: "#88b4ff",
     });
   }
+
+  if (w.colony) {
+    hudS5.hidden = false;
+    hud.classList.add("hud--s5");
+    hudStage.textContent = "S1+S2+S3+S4+S5";
+
+    const s5 = presetRef.metricsThresholdsS5;
+    hudPersistence.textContent = (m.multicellularPersistence ?? 0).toFixed(2);
+    hudPersistenceAvg.textContent = `avg ${(m.multicellularPersistenceAvg ?? 0).toFixed(2)}`;
+    hudLabor.textContent = (m.divisionOfLabor ?? 0).toFixed(2);
+    hudLaborAvg.textContent = `avg ${(m.divisionOfLaborAvg ?? 0).toFixed(2)}`;
+    hudPattern.textContent = (m.developmentalPattern ?? 0).toFixed(2);
+    hudPatternAvg.textContent = `avg ${(m.developmentalPatternAvg ?? 0).toFixed(2)}`;
+    hudColonyCount.textContent = String(m.colonyCount ?? 0);
+
+    drawSparkline(sparkPersistence, w.metrics.getSparklineSeriesS5("multicellularPersistence"), {
+      color: "#a8e6cf",
+      threshold: s5?.multicellularPersistenceRatio,
+    });
+    drawSparkline(sparkLabor, w.metrics.getSparklineSeriesS5("divisionOfLabor"), {
+      color: "#ffd3a5",
+      threshold: s5?.divisionOfLaborColonyShare,
+    });
+    drawSparkline(sparkPattern, w.metrics.getSparklineSeriesS5("developmentalPattern"), {
+      color: "#c5b3ff",
+      threshold: s5?.developmentalPatternScore,
+    });
+    drawSparkline(sparkColonyCount, w.metrics.getSparklineSeriesS5("colonyCount"), {
+      color: "#7ec8ff",
+    });
+  }
 }
 
 function frame(now) {
@@ -300,6 +343,9 @@ function frame(now) {
     world.replicator.draw(ctx, camera);
   }
   if (world.vesicle && world.replicator) {
+    if (world.colony) {
+      world.colony.drawLinks(ctx, camera, world.vesicle);
+    }
     world.vesicle.draw(ctx, camera, world.replicator);
   }
   updateHud(world);

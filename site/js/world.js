@@ -4,6 +4,7 @@ import { Metrics } from "./metrics.js";
 import { Replicator } from "./replicator.js";
 import { Vesicle } from "./vesicle.js";
 import { Chemoton } from "./chemoton.js";
+import { Colony } from "./colony.js";
 import { createRng } from "./camera.js";
 
 /**
@@ -43,12 +44,19 @@ export class World {
     this.vesicle = preset.vesicle
       ? new Vesicle(preset, this.width, this.height, this.rng, this.chemoton)
       : null;
+    this.colony = preset.colony
+      ? new Colony(preset, this.width, this.height)
+      : null;
+    if (this.vesicle && this.colony) {
+      this.vesicle.colony = this.colony;
+    }
     this.metrics = new Metrics(
       preset,
       this.particles.typeCountsSnapshot(),
       this.replicator,
       this.vesicle,
       this.chemoton,
+      this.colony,
     );
 
     this.showGrid = preset.render.showGrid;
@@ -118,6 +126,10 @@ export class World {
       );
     }
 
+    if (this.colony && this.vesicle) {
+      this.colony.step(this.dt, this.vesicle, this.chemoton);
+    }
+
     this.metrics.record(
       this.tickCount,
       this.simTime,
@@ -128,6 +140,7 @@ export class World {
       this.vesicle,
       vesicleEvents,
       this.chemoton,
+      this.colony,
     );
   }
 
