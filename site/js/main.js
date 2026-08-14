@@ -1,5 +1,6 @@
 import { Camera } from "./camera.js";
 import { World } from "./world.js";
+import { drawSparkline } from "./sparkline.js";
 
 const PRESET_URL = "./data/presets/stage0-default.json";
 
@@ -12,12 +13,16 @@ const portraitOverlay = document.getElementById("portrait-overlay");
 const hudTick = document.getElementById("hud-tick");
 const hudTime = document.getElementById("hud-time");
 const hudParticles = document.getElementById("hud-particles");
+const hudSeed = document.getElementById("hud-seed");
 const hudCluster = document.getElementById("hud-cluster");
 const hudClusterAvg = document.getElementById("hud-cluster-avg");
 const hudAutocat = document.getElementById("hud-autocat");
 const hudAutocatAvg = document.getElementById("hud-autocat-avg");
 const hudNegentropy = document.getElementById("hud-negentropy");
 const hudNegentropyAvg = document.getElementById("hud-negentropy-avg");
+const sparkCluster = document.getElementById("spark-cluster");
+const sparkAutocat = document.getElementById("spark-autocat");
+const sparkNegentropy = document.getElementById("spark-negentropy");
 const btnPause = document.getElementById("btn-pause");
 const btnGrid = document.getElementById("btn-grid");
 const btnField = document.getElementById("btn-field");
@@ -26,6 +31,8 @@ const btnField = document.getElementById("btn-field");
 let world = null;
 /** @type {Camera | null} */
 let camera = null;
+/** @type {object | null} */
+let presetRef = null;
 let dpr = 1;
 let lastFrameTime = performance.now();
 
@@ -112,56 +119,34 @@ function drawGrid(cam, w) {
   }
 }
 
-/**
- * @param {import('./camera.js').Camera} cam
- * @param {World} w
- */
-function drawEnergyHeatmap(cam, w) {
-  if (!w.showFieldHeatmap) return;
-
-  const fields = w.fields;
-  const bounds = cam.getViewBounds();
-  const tile = 16;
-  const opacity = fields.heatmapOpacity;
-
-  const startX = Math.floor(bounds.left / tile) * tile;
-  const endX = Math.ceil(bounds.right / tile) * tile;
-  const startY = Math.floor(bounds.bottom / tile) * tile;
-  const endY = Math.ceil(bounds.top / tile) * tile;
-
-  for (let wx = startX; wx < endX; wx += tile) {
-    for (let wy = startY; wy < endY; wy += tile) {
-      const e = fields.sampleEnergy(wx + tile * 0.5, wy + tile * 0.5);
-      const r = Math.floor(20 + e * 40);
-      const g = Math.floor(40 + e * 120);
-      const b = Math.floor(60 + e * 80);
-      const a = opacity * (0.35 + e * 0.65);
-
-      const tl = cam.worldToScreen(wx, wy + tile);
-      const br = cam.worldToScreen(wx + tile, wy);
-      const x = tl.x;
-      const y = tl.y;
-      const width = br.x - tl.x;
-      const height = br.y - tl.y;
-
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
-      ctx.fillRect(x, y, width, height);
-    }
-  }
-}
-
 function updateHud(w) {
   hudTick.textContent = String(w.tickCount);
   hudTime.textContent = `${w.simTime.toFixed(1)} s`;
   hudParticles.textContent = String(w.particles.count());
+  hudSeed.textContent = String(w.seed);
 
   const m = w.metrics.formatHud();
+  const thresholds = presetRef.metricsThresholds;
+
   hudCluster.textContent = m.clusterIndex.toFixed(2);
   hudClusterAvg.textContent = `avg ${m.clusterAvg.toFixed(2)}`;
   hudAutocat.textContent = m.autocatalyticScore.toFixed(2);
   hudAutocatAvg.textContent = `avg ${m.autocatalyticAvg.toFixed(2)}`;
   hudNegentropy.textContent = m.negentropyFlux.toFixed(2);
   hudNegentropyAvg.textContent = `avg ${m.negentropyAvg.toFixed(2)}`;
+
+  drawSparkline(sparkCluster, w.metrics.getSparklineSeries("clusterIndex"), {
+    color: "#8ec8ff",
+    threshold: thresholds.clusterIndex,
+  });
+  drawSparkline(sparkAutocat, w.metrics.getSparklineSeries("autocatalyticScore"), {
+    color: "#e8b44d",
+    threshold: thresholds.autocatalyticScore,
+  });
+  drawSparkline(sparkNegentropy, w.metrics.getSparklineSeries("negentropyFlux"), {
+    color: "#7fd4a8",
+    threshold: thresholds.negentropyFluxRatio,
+  });
 }
 
 function frame(now) {
@@ -179,7 +164,9 @@ function frame(now) {
 
   drawBackground();
   drawGrid(camera, world);
-  drawEnergyHeatmap(camera, world);
+  if (world.showFieldHeatmap) {
+    world.fields.drawHeatmap(ctx, camera);
+  }
   world.particles.draw(ctx, camera);
   updateHud(world);
 }
@@ -203,10 +190,10 @@ function bindControls(w) {
 }
 
 async function main() {
-  const preset = await loadPreset();
-  const seed = parseSeedFromUrl(preset.sim.seed);
+  presetRef = await loadPreset();
+  const seed = parseSeedFromUrl(presetRef.sim.seed);
 
-  world = new World(preset, seed);
+  world = new World(presetRef, seed);
   camera = new Camera(world.width, world.height);
 
   resizeCanvas();

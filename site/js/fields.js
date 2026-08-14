@@ -26,6 +26,11 @@ export class Fields {
     this.energyCfg = preset.fields.energy;
     this.wasteCfg = preset.fields.waste;
     this.heatmapOpacity = preset.fields.heatmapOpacity;
+    this.updateStride = preset.performance?.fieldUpdateStride ?? 1;
+    this.heatmapTileSize = preset.performance?.heatmapTileSize
+      ?? preset.render?.heatmapTileSize
+      ?? 16;
+    this._tick = 0;
 
     for (let i = 0; i < size; i += 1) {
       this.energy[i] = this.energyCfg.baseline;
@@ -68,7 +73,6 @@ export class Fields {
 
   /** @param {number} wx @param {number} wy @param {number} radius */
   energyGradient(wx, wy, radius = 8) {
-    const eCenter = this.sampleEnergy(wx, wy);
     const eRight = this.sampleEnergy(wx + radius, wy);
     const eLeft = this.sampleEnergy(wx - radius, wy);
     const eUp = this.sampleEnergy(wx, wy + radius);
@@ -76,7 +80,7 @@ export class Fields {
     return {
       x: (eRight - eLeft) * 0.5,
       y: (eUp - eDown) * 0.5,
-      center: eCenter,
+      center: this.sampleEnergy(wx, wy),
     };
   }
 
@@ -85,10 +89,14 @@ export class Fields {
    * @param {import('./particles.js').Particles} particles
    */
   step(dt, particles) {
-    this._diffuseField(this.energy, this._energyNext, this.energyCfg.diffusion, dt);
-    this._applyEnergySources(dt);
-    this._diffuseField(this.waste, this._wasteNext, this.wasteCfg.diffusion, dt);
-    this._applyWasteDecay(dt);
+    this._tick += 1;
+    if (this._tick % this.updateStride !== 0) return;
+
+    const effDt = dt * this.updateStride;
+    this._diffuseField(this.energy, this._energyNext, this.energyCfg.diffusion, effDt);
+    this._applyEnergySources(effDt);
+    this._diffuseField(this.waste, this._wasteNext, this.wasteCfg.diffusion, effDt);
+    this._applyWasteDecay(effDt);
     particles.applyFieldFeedback(this);
   }
 
@@ -137,6 +145,37 @@ export class Fields {
     }
 
     src.set(dst);
+  }
+
+  /**
+   * Draw energy heatmap for the visible viewport only.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {import('./camera.js').Camera} camera
+   */
+  drawHeatmap(ctx, camera) {
+    const bounds = camera.getViewBounds();
+    const tile = this.heatmapTileSize;
+    const opacity = this.heatmapOpacity;
+
+    const startX = Math.floor(bounds.left / tile) * tile;
+    const endX = Math.ceil(bounds.right / tile) * tile;
+    const startY = Math.floor(bounds.bottom / tile) * tile;
+    const endY = Math.ceil(bounds.top / tile) * tile;
+
+    for (let wx = startX; wx < endX; wx += tile) {
+      for (let wy = startY; wy < endY; wy += tile) {
+        const e = this.sampleEnergy(wx + tile * 0.5, wy + tile * 0.5);
+        const r = 20 + e * 40;
+        const g = 40 + e * 120;
+        const b = 60 + e * 80;
+        const a = opacity * (0.35 + e * 0.65);
+
+        const tl = camera.worldToScreen(wx, wy + tile);
+        const br = camera.worldToScreen(wx + tile, wy);
+        ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+        ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+      }
+    }
   }
 
   /** @param {Float32Array} field @param {number} wx @param {number} wy */

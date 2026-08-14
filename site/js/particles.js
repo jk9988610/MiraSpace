@@ -28,9 +28,17 @@ export class Particles {
     this.worldHeight = worldHeight;
     this.maxCount = preset.particles.maxCount;
     this.cfg = preset.particles;
+    this.spatialCellSize = preset.performance?.spatialCellSize ?? 64;
     this.list = [];
+    this._nextId = 1;
 
     this._spawnInitial(rng);
+  }
+
+  _makeId(type) {
+    const id = `${type}-${this._nextId}`;
+    this._nextId += 1;
+    return id;
   }
 
   /** @param {ReturnType<import('./camera.js').createRng>} rng */
@@ -54,7 +62,7 @@ export class Particles {
     const speed = type === TYPE.CATALYST ? 2 : 8;
     const angle = rng.range(0, Math.PI * 2);
     return {
-      id: `${type}-${Math.random().toString(36).slice(2, 9)}`,
+      id: this._makeId(type),
       type,
       x,
       y,
@@ -75,6 +83,14 @@ export class Particles {
       counts[p.type] += 1;
     }
     return counts;
+  }
+
+  /** Deterministic layout fingerprint for seed tests. */
+  initialLayoutFingerprint() {
+    return this.list
+      .map((p) => `${p.type}:${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+      .sort()
+      .join("|");
   }
 
   /**
@@ -114,7 +130,6 @@ export class Particles {
 
   /** @param {import('./fields.js').Fields} fields */
   applyFieldFeedback(fields) {
-    // Reserved hook: particles already deposit/consume during metabolism step.
     void fields;
   }
 
@@ -176,27 +191,67 @@ export class Particles {
 
   /**
    * @param {object[]} monomers
+   * @param {object[]} monomerGrid
+   */
+  _buildMonomerGrid(monomers) {
+    const cell = this.spatialCellSize;
+    const grid = new Map();
+    for (const m of monomers) {
+      const cx = Math.floor(wrapCoord(m.x, this.worldWidth) / cell);
+      const cy = Math.floor(wrapCoord(m.y, this.worldHeight) / cell);
+      const key = `${cx},${cy}`;
+      if (!grid.has(key)) grid.set(key, []);
+      grid.get(key).push(m);
+    }
+    return grid;
+  }
+
+  /**
+   * @param {Map<string, object[]>} grid
+   * @param {number} x
+   * @param {number} y
+   * @param {number} radius
+   */
+  _monomersNear(grid, x, y, radius) {
+    const cell = this.spatialCellSize;
+    const r2 = radius * radius;
+    const cx = Math.floor(wrapCoord(x, this.worldWidth) / cell);
+    const cy = Math.floor(wrapCoord(y, this.worldHeight) / cell);
+    const cellRadius = Math.ceil(radius / cell);
+    const nearby = [];
+
+    for (let dy = -cellRadius; dy <= cellRadius; dy += 1) {
+      for (let dx = -cellRadius; dx <= cellRadius; dx += 1) {
+        const bucket = grid.get(`${cx + dx},${cy + dy}`);
+        if (!bucket) continue;
+        for (const m of bucket) {
+          if (m._paired) continue;
+          const ddx = wrapDelta(x, m.x, this.worldWidth);
+          const ddy = wrapDelta(y, m.y, this.worldHeight);
+          if (ddx * ddx + ddy * ddy <= r2) nearby.push(m);
+        }
+      }
+    }
+    return nearby;
+  }
+
+  /**
+   * @param {object[]} monomers
    * @param {object[]} catalysts
    * @param {ReturnType<import('./camera.js').createRng>} rng
    * @param {{ dimersCreated: number, dimersCreatedNearCatalyst: number }} events
    */
   _catalysis(monomers, catalysts, rng, events) {
-    if (this.list.length >= this.maxCount) return;
+    if (this.list.length >= this.maxCount || monomers.length < 2) return;
 
     const radius = this.cfg.catalyst.catalysisRadius;
     const rate = this.cfg.catalyst.pairingRate;
+    const grid = this._buildMonomerGrid(monomers);
 
     for (const cat of catalysts) {
-      const nearby = [];
-      for (const m of monomers) {
-        if (m._paired) continue;
-        const dx = wrapDelta(cat.x, m.x, this.worldWidth);
-        const dy = wrapDelta(cat.y, m.y, this.worldHeight);
-        if (dx * dx + dy * dy <= radius * radius) {
-          nearby.push(m);
-        }
-      }
+      if (this.list.length >= this.maxCount) break;
 
+      const nearby = this._monomersNear(grid, cat.x, cat.y, radius);
       if (nearby.length < 2) continue;
 
       for (let i = 0; i < nearby.length - 1 && this.list.length < this.maxCount; i += 1) {
@@ -211,7 +266,7 @@ export class Particles {
           b._paired = true;
 
           const dimer = {
-            id: `dimer-${Math.random().toString(36).slice(2, 9)}`,
+            id: this._makeId(TYPE.DIMER),
             type: TYPE.DIMER,
             x: wrapCoord((a.x + b.x) * 0.5, this.worldWidth),
             y: wrapCoord((a.y + b.y) * 0.5, this.worldHeight),
@@ -275,19 +330,42 @@ export class Particles {
   }
 
   /**
+   * @param {number} x
+   * @param {number} y
+   * @param {number} left
+   * @param {number} right
+   * @param {number} bottom
+   * @param {number} top
+   */
+  _isVisibleWrapped(x, y, left, right, bottom, top) {
+    const w = this.worldWidth;
+    const h = this.worldHeight;
+    for (const ox of [0, w, -w]) {
+      for (const oy of [0, h, -h]) {
+        const px = x + ox;
+        const py = y + oy;
+        if (px >= left && px <= right && py >= bottom && py <= top) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Draw particles visible in the viewport (with wrap copies).
    * @param {CanvasRenderingContext2D} ctx
    * @param {import('./camera.js').Camera} camera
    */
   draw(ctx, camera) {
     const bounds = camera.getViewBounds();
-    const margin = 20;
+    const margin = 24;
     const left = bounds.left - margin;
     const right = bounds.right + margin;
     const bottom = bounds.bottom - margin;
     const top = bounds.top + margin;
 
     for (const p of this.list) {
+      if (!this._isVisibleWrapped(p.x, p.y, left, right, bottom, top)) continue;
+
       const cfg = this.cfg[p.type];
       const radius = cfg.radius;
       const copies = this._wrapOffsets(p.x, p.y, left, right, bottom, top);
@@ -331,10 +409,6 @@ export class Particles {
     return offsets;
   }
 
-  /**
-   * Collect dimers for metrics.
-   * @returns {{ x: number, y: number }[]}
-   */
   dimerPositions() {
     const out = [];
     for (const p of this.list) {
