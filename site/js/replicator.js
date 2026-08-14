@@ -1,4 +1,5 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
+import { randomNucleationSequence } from "./gene-expression.js";
 
 const STRAND_COLOR = "#c77dff";
 
@@ -15,6 +16,7 @@ export class Replicator {
    */
   constructor(preset, worldWidth, worldHeight, rng) {
     this.cfg = preset.replicator;
+    this.preset = preset;
     this.worldWidth = worldWidth;
     this.worldHeight = worldHeight;
     this.list = [];
@@ -128,7 +130,10 @@ export class Replicator {
       if (!dimerNear) continue;
 
       const length = this.cfg.L0Min + rng.int(this.cfg.L0Max - this.cfg.L0Min + 1);
-      const sequence = this._randomSequence(length, rng);
+      const profiles = this.preset.geneExpression?.nucleationProfiles;
+      const sequence = profiles?.length
+        ? randomNucleationSequence(rng, length, profiles)
+        : this._randomSequence(length, rng);
       this.list.push(this._createStrand(sequence, cat.x, cat.y, rng, null, null));
       this._L0Sum += length;
       this._L0Count += 1;

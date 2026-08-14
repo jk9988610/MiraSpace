@@ -73,17 +73,12 @@ export function estimateCarbonPool(fields, vesicle) {
 
   if (fields.CO2) {
     for (let i = 0; i < fields.CO2.length; i += 1) pool += fields.CO2[i];
-    pool += fields.globalCO2 * fields.CO2.length;
   }
   if (fields.DOC) {
     for (let i = 0; i < fields.DOC.length; i += 1) pool += fields.DOC[i];
   }
   if (fields.POC) {
     for (let i = 0; i < fields.POC.length; i += 1) pool += fields.POC[i];
-  }
-  if (fields.O2) {
-    for (let i = 0; i < fields.O2.length; i += 1) pool += fields.O2[i] * 0.01;
-    pool += fields.globalO2 * fields.O2.length * 0.01;
   }
 
   if (vesicle) {
@@ -195,6 +190,11 @@ export function applyGeneFluxForVesicle(
       dWaste: flux.dWaste,
       dPOC: flux.dPOC,
     });
+  }
+
+  const o2Coupling = preset.atmosphere?.fluxCoupling ?? 0;
+  if (o2Coupling > 0 && flux.dO2 > 0) {
+    fields.globalO2 = clamp01(fields.globalO2 + flux.dO2 * o2Coupling);
   }
 
   const coupling = preset.chemoton?.geneFluxCoupling ?? {};

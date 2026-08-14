@@ -3,7 +3,7 @@
  */
 
 import {
-  MILESTONE_CONDITIONS,
+  ALL_MILESTONE_CONDITIONS,
   isConditionMet,
 } from "./milestone-conditions.js";
 
@@ -23,7 +23,7 @@ export function createMilestoneTracker(handlers) {
    * @param {object} preset
    */
   function check(metricsHud, preset) {
-    for (const def of MILESTONE_CONDITIONS) {
+    for (const def of ALL_MILESTONE_CONDITIONS) {
       if (achieved.has(def.id)) continue;
       if (!isConditionMet(def, metricsHud, preset)) continue;
       achieved.add(def.id);

@@ -153,6 +153,53 @@ export const MILESTONE_CONDITIONS = [
   },
 ];
 
+/** @type {ConditionDef[]} */
+export const EARTH_MILESTONE_CONDITIONS = [
+  {
+    id: "earth-cyanophyte",
+    stage: STAGES.earth.zh,
+    stageKey: "earth",
+    label: METRICS.cyanophytePresence.zh,
+    metricKey: "cyanophytePresence",
+    getThreshold: (p) => p.metricsThresholdsEarth?.cyanophytePresence,
+    compare: ">=",
+    windowLabel: "观测",
+  },
+  {
+    id: "earth-o2-rise",
+    stage: STAGES.earth.zh,
+    stageKey: "earth",
+    label: METRICS.globalO2Rise.zh,
+    metricKey: "globalO2Rise",
+    getThreshold: (p) => p.metricsThresholdsEarth?.globalO2Rise,
+    compare: ">=",
+    windowLabel: "相对初始",
+  },
+  {
+    id: "earth-trophic",
+    stage: STAGES.earth.zh,
+    stageKey: "earth",
+    label: METRICS.trophicRichness.zh,
+    metricKey: "trophicRichness",
+    getThreshold: (p) => p.metricsThresholdsEarth?.trophicRichness,
+    compare: ">=",
+    windowLabel: "当前",
+  },
+  {
+    id: "earth-heterotroph",
+    stage: STAGES.earth.zh,
+    stageKey: "earth",
+    label: METRICS.heterotrophPresence.zh,
+    metricKey: "heterotrophPresence",
+    getThreshold: (p) => p.metricsThresholdsEarth?.heterotrophPresence,
+    compare: ">=",
+    windowLabel: "观测",
+  },
+];
+
+/** @type {ConditionDef[]} */
+export const ALL_MILESTONE_CONDITIONS = [...MILESTONE_CONDITIONS, ...EARTH_MILESTONE_CONDITIONS];
+
 /** @type {Record<string, { label: string, subtitle: string }>} */
 export const STAGE_TREE_META = {
   s1: { label: "前生物化学", subtitle: "代谢场与酶促偶联" },
@@ -160,6 +207,7 @@ export const STAGE_TREE_META = {
   s3: { label: "原细胞", subtitle: "膜与胞质分裂" },
   s4: { label: "整合细胞", subtitle: "代谢耦合" },
   s5: { label: "多细胞生物", subtitle: "群体分工" },
+  earth: { label: "米拉地球", subtitle: "大气与营养级" },
 };
 
 /**

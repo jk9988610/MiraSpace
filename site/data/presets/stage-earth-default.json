@@ -2,33 +2,59 @@
   "extends": "stage5-default.json",
   "geneExpression": {
     "headerBits": 12,
-    "fluxCoeffs": { "alpha": 0.04, "beta": 0.04, "gamma": 0.03, "delta": 0.02 },
+    "fluxCoeffs": { "alpha": 0.06, "beta": 0.06, "gamma": 0.30, "delta": 0 },
     "envK": { "CO2": 0.15, "O2": 0.08, "DOC": 0.12, "O2_tox": 0.25, "POC": 0.1, "energy": 0.2 },
     "F_max": 1.0,
     "nightFactor": 0.15,
     "predatorTransfer": 0.08,
-    "diffIntervalTicks": 30
+    "diffIntervalTicks": 30,
+    "nucleationProfiles": [
+      { "m": 0, "t": 0, "r": 0, "weight": 0.45 },
+      { "m": 1, "t": 0, "r": 0, "weight": 0.1 },
+      { "m": 2, "t": 1, "r": 0, "weight": 0.18 },
+      { "m": 2, "t": 2, "r": 0, "weight": 0.05 },
+      { "m": 3, "t": 3, "r": 8, "weight": 0.14 },
+      { "m": 4, "t": 3, "r": 0, "weight": 0.12 }
+    ]
   },
   "replicator": {
     "L0Min": 12,
-    "L0Max": 24
+    "L0Max": 24,
+    "nucleationRate": 0.00045,
+    "pairingRate": 0.55
+  },
+  "particles": {
+    "catalyst": {
+      "pairingRate": 0.55
+    }
   },
   "fields": {
     "CO2": { "baseline": 0.35, "diffusion": 0.25, "max": 1, "decay": 0 },
     "O2": { "baseline": 0.02, "diffusion": 0.3, "max": 1, "decay": 0 },
-    "DOC": { "baseline": 0.05, "diffusion": 0.2, "max": 1, "decay": 0.01 },
-    "POC": { "baseline": 0.02, "diffusion": 0.08, "max": 1, "decay": 0.005 }
+    "DOC": { "baseline": 0.05, "diffusion": 0.2, "max": 1, "decay": 0 },
+    "POC": { "baseline": 0.02, "diffusion": 0.08, "max": 1, "decay": 0 },
+    "waste": { "decay": 0 }
   },
   "atmosphere": {
     "globalCO2": 0.35,
     "globalO2": 0.02,
-    "oceanEquilRate": 0.01,
-    "biosphereFeedback": 0.05
+    "oceanEquilRate": 0.012,
+    "biosphereFeedback": 0.1,
+    "fluxCoupling": 0.004
   },
   "chemoton": {
     "geneFluxCoupling": {
-      "fluxGainK": 0.18,
-      "wasteStressK": 0.3
+      "fluxGainK": 0.22,
+      "wasteStressK": 0.28
+    }
+  },
+  "metricsThresholdsEarth": {
+    "globalO2Rise": 0.05,
+    "trophicRichness": 2,
+    "cyanophytePresence": 1,
+    "heterotrophPresence": 1,
+    "sustainSeconds": {
+      "globalO2": 90
     }
   },
   "render": {

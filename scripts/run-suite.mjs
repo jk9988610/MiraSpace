@@ -28,7 +28,7 @@ function parseArgs(argv) {
 function usage() {
   console.error(`Usage:
   node scripts/run-suite.mjs --smoke [--preset=stage3-default] [--json]
-  node scripts/run-suite.mjs --acceptance [--preset=stage0-default|stage2-default|stage3-default|stage4-default|stage5-default] [--json]
+  node scripts/run-suite.mjs --acceptance [--preset=stage3-default|stage-earth-default] [--json]
 
 AI default: --smoke only. Do not run --acceptance unless explicitly requested.`);
 }
@@ -63,6 +63,7 @@ function runAcceptance(opts = {}) {
     { id: "s3", script: "s3-headless-test.mjs", presets: ["stage3-default", "stage3"] },
     { id: "s4", script: "s4-headless-test.mjs", presets: ["stage4-default", "stage4"] },
     { id: "s5", script: "s5-headless-test.mjs", presets: ["stage5-default", "stage5"] },
+    { id: "earth", script: "s-earth-headless-test.mjs", presets: ["stage-earth-default", "stage-earth", "earth"] },
   ];
 
   const filter = opts.preset?.replace(/\.json$/, "");

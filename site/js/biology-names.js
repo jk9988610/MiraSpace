@@ -94,6 +94,11 @@ export const STAGES = {
     en: "Multicellular organism",
     subtitle: "细胞黏附 · 分工 · 发育模式",
   },
+  earth: {
+    zh: "米拉地球",
+    en: "Mira Earth",
+    subtitle: "大气与营养级循环",
+  },
 };
 
 /** @type {Record<string, { zh: string, en: string }>} */
@@ -117,6 +122,13 @@ export const METRICS = {
   divisionOfLabor: { zh: "细胞分工", en: "Division of labor" },
   developmentalPattern: { zh: "发育模式", en: "Developmental pattern" },
   colonyCount: { zh: "群体数", en: "Colony count" },
+  trophicRichness: { zh: "营养级丰富度", en: "Trophic richness" },
+  producerBiomass: { zh: "生产者生物量占比", en: "Producer biomass share" },
+  netOCFlux: { zh: "净有机碳通量", en: "Net OC flux" },
+  globalO2Level: { zh: "大气氧", en: "Atmospheric O₂" },
+  globalO2Rise: { zh: "氧上升幅度", en: "O₂ rise" },
+  cyanophytePresence: { zh: "固碳菌出现", en: "Cyanophyte presence" },
+  heterotrophPresence: { zh: "异养出现", en: "Heterotroph presence" },
 };
 
 /** @param {BioLabel} label */

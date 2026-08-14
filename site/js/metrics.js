@@ -1,5 +1,6 @@
 import { wrapDelta } from "./camera.js";
 import { sequenceSimilarity } from "./replicator.js";
+import { ARCHETYPE_META, netOrganicCarbonGain } from "./gene-expression.js";
 
 /**
  * S1 + optional S2 emergence metrics with sliding-window averages.
@@ -88,6 +89,20 @@ export class Metrics {
     this.divisionOfLaborAvg = 0;
     this.developmentalPatternAvg = 0;
     this._historyS5 = [];
+
+    this.earthEnabled = !!(preset.geneExpression && preset.atmosphere);
+    this.earthThresholds = preset.metricsThresholdsEarth ?? null;
+    this.trophicRichness = 0;
+    this.producerBiomass = 0;
+    this.netOCFlux = 0;
+    this.globalO2Level = preset.atmosphere?.globalO2 ?? 0.02;
+    this.globalCO2Level = preset.atmosphere?.globalCO2 ?? 0.35;
+    this.globalO2Rise = 0;
+    this.globalO2Avg = this.globalO2Level;
+    this.cyanophytePresence = 0;
+    this.heterotrophPresence = 0;
+    this._initialGlobalO2 = preset.atmosphere?.globalO2 ?? 0.02;
+    this._historyEarth = [];
   }
 
   /**
@@ -101,8 +116,9 @@ export class Metrics {
    * @param {object | null} [vesicleEvents]
    * @param {import('./chemoton.js').Chemoton | null} [chemoton]
    * @param {import('./colony.js').Colony | null} [colony]
+   * @param {import('./fields.js').Fields | null} [fields]
    */
-  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null, chemoton = null, colony = null) {
+  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null, chemoton = null, colony = null, fields = null) {
     this._intervalDimersCreated += particleEvents.dimersCreated;
     this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
@@ -137,6 +153,10 @@ export class Metrics {
 
     if (this.s5Enabled && replicator && vesicle && chemoton && colony) {
       this._recordS5(simTime, vesicle, chemoton, colony);
+    }
+
+    if (this.earthEnabled && vesicle && chemoton && fields) {
+      this._recordEarth(simTime, vesicle, chemoton, fields);
     }
 
     this._intervalDimersCreated = 0;
@@ -512,6 +532,71 @@ export class Metrics {
     );
   }
 
+  /**
+   * @param {number} simTime
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {import('./chemoton.js').Chemoton} chemoton
+   * @param {import('./fields.js').Fields} fields
+   */
+  _recordEarth(simTime, vesicle, chemoton, fields) {
+    const archetypes = new Set();
+    let producerBiomass = 0;
+    let totalBiomass = 0;
+    let netOC = 0;
+    let heterotrophCount = 0;
+
+    for (const v of vesicle.list) {
+      if (!v.chemoton) continue;
+      const arch = v.chemoton.archetype ?? v.chemoton.effectiveArchetype ?? "leaky_heterotroph";
+      archetypes.add(arch);
+      const bm = v.biomass ?? 0;
+      totalBiomass += bm;
+
+      const meta = ARCHETYPE_META[arch];
+      if (meta?.trophicRole === "producer") producerBiomass += bm;
+      if (meta?.trophicRole === "consumer" || meta?.trophicRole === "decomposer") {
+        heterotrophCount += 1;
+      }
+
+      if (arch === "cyanophyte") {
+        this.cyanophytePresence = 1;
+      }
+
+      const flux = v.chemoton._lastGeneFlux;
+      if (flux) netOC += netOrganicCarbonGain(flux);
+    }
+
+    this.trophicRichness = archetypes.size;
+    this.producerBiomass = totalBiomass > 0 ? producerBiomass / totalBiomass : 0;
+    this.netOCFlux = netOC / Math.max(1, vesicle.count());
+    this.globalO2Level = fields.globalO2;
+    this.globalCO2Level = fields.globalCO2;
+    this.globalO2Rise = fields.globalO2 - this._initialGlobalO2;
+    this.heterotrophPresence = heterotrophCount > 0 ? 1 : 0;
+
+    this._pushHistoryEarth(simTime, {
+      trophicRichness: this.trophicRichness,
+      producerBiomass: this.producerBiomass,
+      netOCFlux: this.netOCFlux,
+      globalO2: this.globalO2Level,
+      globalO2Rise: this.globalO2Rise,
+      cyanophytePresence: this.cyanophytePresence,
+      heterotrophPresence: this.heterotrophPresence,
+    });
+
+    const sustain = this.earthThresholds?.sustainSeconds?.globalO2 ?? 90;
+    this.globalO2Avg = this._averageHistorySince(this._historyEarth, "globalO2", simTime - sustain);
+    void chemoton;
+  }
+
+  /** @param {number} simTime @param {object} row */
+  _pushHistoryEarth(simTime, row) {
+    this._historyEarth.push({ t: simTime, ...row });
+    while (this._historyEarth.length > this.historyMaxSamples) {
+      this._historyEarth.shift();
+    }
+  }
+
   /** @param {object[]} history @param {string} key */
   _averageHistory(history, key) {
     if (history.length === 0) return this[key] ?? 0;
@@ -572,7 +657,7 @@ export class Metrics {
       chemotonCount: this.chemotonCount,
     };
     if (!this.s5Enabled) return s4out;
-    return {
+    const s5out = {
       ...s4out,
       multicellularPersistence: this.multicellularPersistence,
       multicellularPersistenceAvg: this.multicellularPersistenceAvg,
@@ -581,6 +666,19 @@ export class Metrics {
       developmentalPattern: this.developmentalPattern,
       developmentalPatternAvg: this.developmentalPatternAvg,
       colonyCount: this.colonyCount,
+    };
+    if (!this.earthEnabled) return s5out;
+    return {
+      ...s5out,
+      trophicRichness: this.trophicRichness,
+      producerBiomass: this.producerBiomass,
+      netOCFlux: this.netOCFlux,
+      globalO2Level: this.globalO2Level,
+      globalCO2Level: this.globalCO2Level,
+      globalO2Rise: this.globalO2Rise,
+      globalO2Avg: this.globalO2Avg,
+      cyanophytePresence: this.cyanophytePresence,
+      heterotrophPresence: this.heterotrophPresence,
     };
   }
 }

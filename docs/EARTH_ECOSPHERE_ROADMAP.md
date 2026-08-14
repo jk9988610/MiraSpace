@@ -27,7 +27,7 @@
 | **E1** | 基因表达内核 | ✅ `gene-expression.js`、解码与通量表 | `test-gene-expression.mjs`（smoke 内） |
 | **E2** | 物质场与大气 | ✅ CO₂/O₂/DOC/POC + `stage-earth-default` | smoke：`ecologyFieldsBounded` |
 | **E3** | 细胞通量耦合 | ✅ `gene-flux.js`、biomass、`chemoton.applyGeneFlux` | smoke：`geneFluxCoupling` + 碳预算 |
-| **E4** | 营养级与捕食 | predator 转移、6 archetype HUD | acceptance：600s O₂↑、异养出现 |
+| **E4** | 营养级与捕食 | ✅ predator、指标、里程碑、`s-earth-headless-test` | acceptance：600s O₂↑、异养、碳预算 |
 | **E5** | 表观分工 | colony `effectiveM/T`、快照字段 | smoke：colony≥3 时分化位可见 |
 | **E6** | 剖面坐标（B） | y=海拔/深度、经度 pan、光照深度 | 视觉 + 光场随 pan 变化 |
 | **E7** | 宏观 UX | 包络去连线、植物锚定、放大镜 | 手动 / 录屏验收 |

@@ -211,9 +211,7 @@ export function decodeSequence(sequence, overrides = {}) {
   return buildDecoded(m, t, r, true);
 }
 
-/**
- * @param {number} m @param {number} t @param {number} [r] @param {number} [junkLen]
- */
+/** @param {number} m @param {number} t @param {number} [r] @param {number} [junkLen] */
 export function buildExpressionHeader(m, t, r = 0, junkLen = 0) {
   const seq = [];
   for (let i = 3; i >= 0; i -= 1) seq.push((m >> i) & 1);
@@ -228,6 +226,38 @@ export function clamp01(v) {
   if (v <= 0) return 0;
   if (v >= 1) return 1;
   return v;
+}
+
+/**
+ * Weighted nucleation header for earth preset (still emergent junk tail).
+ * @param {ReturnType<import('./camera.js').createRng>} rng
+ * @param {number} length
+ * @param {Array<{ m: number, t: number, r?: number, weight?: number }>} profiles
+ */
+export function randomNucleationSequence(rng, length, profiles) {
+  const len = Math.max(HEADER_BITS, length);
+  if (!profiles?.length) {
+    const seq = [];
+    for (let i = 0; i < len; i += 1) seq.push(rng.int(2));
+    return seq;
+  }
+
+  let total = 0;
+  for (const p of profiles) total += p.weight ?? 1;
+  let pick = rng.next() * total;
+  let chosen = profiles[0];
+  for (const p of profiles) {
+    pick -= p.weight ?? 1;
+    if (pick <= 0) {
+      chosen = p;
+      break;
+    }
+  }
+
+  const header = buildExpressionHeader(chosen.m, chosen.t, chosen.r ?? 0, 0);
+  const seq = [...header];
+  while (seq.length < len) seq.push(rng.int(2));
+  return seq.slice(0, len);
 }
 
 /**

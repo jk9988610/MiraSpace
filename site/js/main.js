@@ -62,6 +62,7 @@ const hudParticles = document.getElementById("hud-particles");
 const hudRowAtmosphere = document.getElementById("hud-row-atmosphere");
 const hudGlobalO2 = document.getElementById("hud-global-o2");
 const hudGlobalCO2 = document.getElementById("hud-global-co2");
+const hudTrophicRichness = document.getElementById("hud-trophic-richness");
 const hudSeed = document.getElementById("hud-seed");
 const hudRowStrands = document.getElementById("hud-row-strands");
 const hudStrands = document.getElementById("hud-strands");
@@ -459,6 +460,9 @@ function updateHud(w) {
     hudRowAtmosphere.hidden = false;
     if (hudGlobalO2) hudGlobalO2.textContent = w.fields.globalO2.toFixed(3);
     if (hudGlobalCO2) hudGlobalCO2.textContent = w.fields.globalCO2.toFixed(3);
+    if (hudTrophicRichness) {
+      hudTrophicRichness.textContent = String(m.trophicRichness ?? 0);
+    }
   } else if (hudRowAtmosphere) {
     hudRowAtmosphere.hidden = true;
   }

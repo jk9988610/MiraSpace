@@ -1,10 +1,11 @@
 import {
   MILESTONE_CONDITIONS,
+  ALL_MILESTONE_CONDITIONS,
   STAGE_TREE_META,
   evaluateCondition,
 } from "./milestone-conditions.js";
 
-const STAGE_ORDER = ["s1", "s2", "s3", "s4", "s5"];
+const STAGE_ORDER = ["s1", "s2", "s3", "s4", "s5", "earth"];
 
 /**
  * @param {HTMLElement} container
@@ -50,7 +51,7 @@ export function createConditionsTree(container, toggleBtn, opts) {
 
   /** @type {Record<string, ConditionDef[]>} */
   const byStage = {};
-  for (const def of MILESTONE_CONDITIONS) {
+  for (const def of ALL_MILESTONE_CONDITIONS) {
     if (!byStage[def.stageKey]) byStage[def.stageKey] = [];
     byStage[def.stageKey].push(def);
   }

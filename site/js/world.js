@@ -162,6 +162,7 @@ export class World {
       vesicleEvents,
       this.chemoton,
       this.colony,
+      this.fields,
     );
   }
 
