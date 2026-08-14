@@ -184,6 +184,7 @@ site/
     └── stage4-default.json
     └── stage5-default.json
 scripts/
+├── test-gene-expression.mjs  # E1 基因表达解码/通量
 ├── run-suite.mjs
 ├── smoke-test.mjs
 ├── s5-headless-test.mjs

@@ -335,7 +335,7 @@ HUD 显示「表观分工」；遗传谱系仍来自真实 sequence。
 
 | 文件 | 职责 |
 |------|------|
-| `site/js/gene-expression.js` | 解码、archetype、通量 |
+| `site/js/gene-expression.js` | 解码、archetype、通量（E1 ✅） |
 | `site/js/fields.js` | 扩展 CO₂/O₂/DOC/POC |
 | `site/js/chemoton.js` | 调用通量、更新 flux |
 | `site/js/biology-names.js` | archetype 中文名 |

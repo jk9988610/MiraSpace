@@ -51,6 +51,22 @@ export const ENTITIES = {
   },
 };
 
+/** @type {Record<string, { zh: string, en: string, trophicRole?: string }>} */
+export const ARCHETYPES = {
+  cyanophyte: { zh: "蓝细菌样固碳菌", en: "Cyanophyte-like autotroph", trophicRole: "producer" },
+  chemo_producer: { zh: "化能生产者", en: "Chemoautotrophic producer", trophicRole: "producer" },
+  herbivore: { zh: "食草消费者", en: "Herbivorous consumer", trophicRole: "consumer" },
+  predator: { zh: "捕食消费者", en: "Predatory consumer", trophicRole: "consumer" },
+  anaerobe_decomposer: { zh: "厌氧分解者", en: "Anaerobic decomposer", trophicRole: "decomposer" },
+  aerobe_decomposer: { zh: "好氧分解者", en: "Aerobic decomposer", trophicRole: "decomposer" },
+  leaky_heterotroph: { zh: "渗漏异养型", en: "Leaky heterotroph", trophicRole: "consumer" },
+};
+
+/** @param {string} key */
+export function archetypeLabelZh(key) {
+  return ARCHETYPES[key]?.zh ?? key;
+}
+
 /** @type {Record<string, { zh: string, en: string, subtitle: string }>} */
 export const STAGES = {
   s1: {

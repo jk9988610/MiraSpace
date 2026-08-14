@@ -6,6 +6,11 @@
 import { loadPresetSync } from "./preset-loader.mjs";
 import { runSimSeconds, timed } from "./test-utils.mjs";
 import { buildReport } from "./test-report.mjs";
+import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SEED = 42;
 const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45, stage5: 45 };
@@ -101,8 +106,14 @@ export function runSmoke(opts = {}) {
     return { checks, metrics };
   });
 
+  const geneProc = spawnSync(process.execPath, [join(__dirname, "test-gene-expression.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
+
   const checks = [
     ...result.checks,
+    { id: "geneExpressionDecode", pass: (geneProc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);
