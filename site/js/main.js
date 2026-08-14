@@ -16,7 +16,7 @@ import { createMilestoneTracker } from "./milestone-tracker.js";
 import { buildSnapshotNarrative, buildSnapshotText } from "./data-export.js";
 import { createSnapshotModal } from "./snapshot-modal.js";
 import { createUiGuide, createSimObserver } from "./ui-guide.js";
-import { createInitPicker } from "./init-picker.js";
+import { createConditionsTree } from "./conditions-tree.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -30,6 +30,7 @@ const controlPanelContainer = document.getElementById("control-panel");
 const topRightUi = document.getElementById("top-right-ui");
 const uiGuidePanel = document.getElementById("ui-guide-panel");
 const snapshotModalContainer = document.getElementById("snapshot-modal");
+const conditionsTreeContainer = document.getElementById("conditions-tree");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
 const hudPreset = document.getElementById("hud-preset");
@@ -127,6 +128,8 @@ let simObserver = null;
 let initPicker = null;
 /** @type {ReturnType<typeof createSnapshotModal> | null} */
 let snapshotModal = null;
+/** @type {ReturnType<typeof createConditionsTree> | null} */
+let conditionsTree = null;
 let snapshotAutoPaused = false;
 let frameStarted = false;
 
@@ -428,6 +431,9 @@ function updateHud(w) {
   if (uiGuide?.isOpen()) {
     uiGuide.updateStatic();
   }
+  if (conditionsTree?.isOpen()) {
+    conditionsTree.render();
+  }
 }
 
 function syncUrl() {
@@ -611,6 +617,19 @@ async function main() {
 
   uiGuide = createUiGuide(uiGuidePanel, controlPanel.btnGuide, {
     getContext: getGuideContext,
+  });
+
+  conditionsTree = createConditionsTree(conditionsTreeContainer, controlPanel.btnConditions, {
+    getContext: () => {
+      if (!world || !activeTab || !presetRef) return null;
+      return {
+        metrics: world.metrics.formatHud(),
+        preset: presetRef,
+        achieved: milestoneTracker?.getAchieved() ?? new Set(),
+        activeHudStages: activeTab.hudStages,
+        stageLabel: activeTab.label,
+      };
+    },
   });
 
   snapshotModal = createSnapshotModal(snapshotModalContainer);

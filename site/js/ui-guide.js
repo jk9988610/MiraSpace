@@ -28,7 +28,7 @@ const STATIC_GUIDE_HTML = `
   <ul class="ui-guide__list" id="ui-guide-static-list">
     <li><strong>左上 HUD</strong>：当前阶段涌现指标；滑动查看全部。</li>
     <li><strong>顶栏 Tab</strong>：切换 preset，保留 seed，重置世界。</li>
-    <li><strong>右下控制</strong>：暂停、1×/5×/20×、网格、场、重置、说明、快照。</li>
+    <li><strong>右下控制</strong>：暂停、1×/5×/20×、网格、场、重置、说明、条件、快照。</li>
     <li><strong>Canvas</strong>：单指平移观察；场热力图可开关。</li>
   </ul>
 </section>
@@ -86,7 +86,7 @@ export function createUiGuide(panelContainer, toggleBtn, opts) {
       <li><strong>运行</strong>：${status} · seed ${ctx.seed} · ${ctx.simTime.toFixed(1)} s · tick ${ctx.tickCount}</li>
       <li><strong>左上 HUD</strong>：${escapeHtml(ctx.hudStage)} 指标组；sparkline 虚线=门槛。</li>
       <li><strong>顶栏 Tab</strong>：切换 preset 会重置世界，保留 seed 与倍率。</li>
-      <li><strong>右下控制</strong>：暂停/倍率/网格/场/重置/说明/快照；说明不暂停，快照会暂停。</li>
+      <li><strong>右下控制</strong>：暂停/倍率/网格/场/重置/说明/条件/快照；条件面板展示里程碑科技树。</li>
       <li><strong>Canvas</strong>：粒子${ctx.particleCount}${ctx.strandCount != null ? ` · strand ${ctx.strandCount}` : ""}${ctx.vesicleCount != null ? ` · vesicle ${ctx.vesicleCount}` : ""}。</li>
     `;
   }
