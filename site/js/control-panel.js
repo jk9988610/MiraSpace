@@ -9,6 +9,7 @@ import { TIME_SCALES, normalizeTimeScale } from "./sim-clock.js";
  *   onGridToggle: () => void,
  *   onFieldToggle: () => void,
  *   onReset: () => void,
+ *   onPrint: () => void,
  * }} handlers
  */
 export function createControlPanel(container, handlers) {
@@ -82,6 +83,20 @@ export function createControlPanel(container, handlers) {
   rowView.appendChild(btnReset);
 
   container.appendChild(rowView);
+
+  const rowPrint = document.createElement("div");
+  rowPrint.className = "control-panel__row";
+
+  const btnPrint = document.createElement("button");
+  btnPrint.type = "button";
+  btnPrint.id = "btn-print";
+  btnPrint.className = "control-panel__btn control-panel__btn--print";
+  btnPrint.textContent = "打印记录";
+  btnPrint.title = "打印全部阶段指标数据记录";
+  btnPrint.addEventListener("click", handlers.onPrint);
+  rowPrint.appendChild(btnPrint);
+
+  container.appendChild(rowPrint);
 
   /**
    * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean }} state
