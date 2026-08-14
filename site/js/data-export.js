@@ -13,95 +13,129 @@ import { STAGE_TABS } from "./stage-nav.js";
  *   world: import('./world.js').World,
  * }} ctx
  */
-export function buildDataRecord(ctx) {
-  const lines = [];
+export function buildSnapshotNarrative(ctx) {
   const w = ctx.world;
   const m = ctx.metrics;
+  const paragraphs = [];
 
-  lines.push("MiraSpace 数据记录");
-  lines.push(`导出时间: ${new Date().toISOString()}`);
-  lines.push("");
-  lines.push("── 运行状态 ──");
-  lines.push(`阶段 Tab: ${ctx.stageLabel}`);
-  lines.push(`Preset: ${ctx.presetName}`);
-  lines.push(`Seed: ${ctx.seed}`);
-  lines.push(`Sim 时间: ${ctx.simTime.toFixed(2)} s`);
-  lines.push(`Tick: ${ctx.tickCount}`);
-  lines.push(`时间倍率: ${ctx.timeScale}×`);
-  lines.push(`暂停: ${ctx.paused ? "是" : "否"}`);
-  lines.push(`粒子数: ${w.particles.count()}`);
-  if (w.replicator) lines.push(`Strand 数: ${w.replicator.count()}`);
-  if (w.vesicle) lines.push(`Vesicle 数: ${w.vesicle.count()}`);
-  if (w.colony) lines.push(`Colony 数: ${w.colony.count()}`);
+  paragraphs.push(
+    `此刻处于「${ctx.stageLabel}」（${ctx.presetName}），`
+    + `seed=${ctx.seed}，模拟时间 ${ctx.simTime.toFixed(1)} s（tick ${ctx.tickCount}），`
+    + `时间倍率 ${ctx.timeScale}×，${ctx.paused ? "已暂停" : "运行中"}。`,
+  );
 
-  lines.push("");
-  lines.push("── S1 指标 ──");
-  lines.push(`clusterIndex: ${m.clusterIndex?.toFixed(4)} (avg ${m.clusterAvg?.toFixed(4)})`);
-  lines.push(`autocatalyticScore: ${m.autocatalyticScore?.toFixed(4)} (avg ${m.autocatalyticAvg?.toFixed(4)})`);
-  lines.push(`negentropyFlux: ${m.negentropyFlux?.toFixed(4)} (avg ${m.negentropyAvg?.toFixed(4)})`);
+  paragraphs.push(
+    `场上有 ${w.particles.count()} 个粒子（monomer/catalyst/dimer）。`
+    + ` S1 指标：clusterIndex ${m.clusterIndex?.toFixed(2)}、`
+    + `autocatalytic ${m.autocatalyticScore?.toFixed(2)}、`
+    + `negentropy ${m.negentropyFlux?.toFixed(2)}。`,
+  );
 
   if (w.replicator) {
-    lines.push("");
-    lines.push("── S2 指标 ──");
-    lines.push(`heritability: ${m.heritability?.toFixed(4)} (avg ${m.heritabilityAvg?.toFixed(4)})`);
-    lines.push(`selectiveSweep: ${m.selectiveSweep?.toFixed(4)} (avg ${m.selectiveSweepAvg?.toFixed(4)})`);
-    lines.push(`informationAccumulation: ${m.informationAccumulation?.toFixed(4)} (avg ${m.informationAccumulationAvg?.toFixed(4)})`);
-    lines.push(`parasiteFraction: ${m.parasiteFraction?.toFixed(4)}`);
-    lines.push(`strandCount: ${m.strandCount ?? 0}`);
+    paragraphs.push(
+      `S2：strand ${m.strandCount ?? w.replicator.count()} 条；`
+      + `heritability ${m.heritability?.toFixed(2)}，`
+      + `informationAccumulation ${m.informationAccumulation?.toFixed(2)}，`
+      + `parasiteFraction ${m.parasiteFraction?.toFixed(2)}。`,
+    );
   }
 
   if (w.vesicle) {
-    lines.push("");
-    lines.push("── S3 指标 ──");
-    lines.push(`encapsulationGain: ${(m.encapsulationGain ?? 0).toFixed(4)} (avg ${(m.encapsulationGainAvg ?? 0).toFixed(4)})`);
-    lines.push(`parasiteLoad: ${(m.parasiteLoad ?? 0).toFixed(4)} (avg ${(m.parasiteLoadAvg ?? 0).toFixed(4)})`);
-    lines.push(`fissionEvents: ${m.fissionEvents ?? 0}`);
-    lines.push(`vesicleCount: ${m.vesicleCount ?? 0}`);
+    paragraphs.push(
+      `S3：vesicle ${m.vesicleCount ?? w.vesicle.count()} 个；`
+      + `encapsulationGain ${(m.encapsulationGain ?? 0).toFixed(2)}，`
+      + `fissionEvents（300s 窗）${m.fissionEvents ?? 0}。`,
+    );
   }
 
   if (w.chemoton) {
-    lines.push("");
-    lines.push("── S4 指标 ──");
-    lines.push(`chemotonCoherence: ${(m.chemotonCoherence ?? 0).toFixed(4)} (avg ${(m.chemotonCoherenceAvg ?? 0).toFixed(4)})`);
-    lines.push(`lineagePersistence: ${(m.lineagePersistence ?? 0).toFixed(4)} (avg ${(m.lineagePersistenceAvg ?? 0).toFixed(4)})`);
-    lines.push(`storageFidelity: ${(m.storageFidelity ?? 1).toFixed(4)}`);
-    lines.push(`chemotonCount: ${m.chemotonCount ?? 0}`);
+    paragraphs.push(
+      `S4：chemotonCoherence ${(m.chemotonCoherence ?? 0).toFixed(2)}，`
+      + `lineagePersistence ${(m.lineagePersistence ?? 0).toFixed(2)}，`
+      + `coherent vesicle ${m.chemotonCount ?? 0} 个。`,
+    );
   }
 
   if (w.colony) {
-    lines.push("");
-    lines.push("── S5 指标 ──");
-    lines.push(`multicellularPersistence: ${(m.multicellularPersistence ?? 0).toFixed(4)} (avg ${(m.multicellularPersistenceAvg ?? 0).toFixed(4)})`);
-    lines.push(`divisionOfLabor: ${(m.divisionOfLabor ?? 0).toFixed(4)} (avg ${(m.divisionOfLaborAvg ?? 0).toFixed(4)})`);
-    lines.push(`developmentalPattern: ${(m.developmentalPattern ?? 0).toFixed(4)} (avg ${(m.developmentalPatternAvg ?? 0).toFixed(4)})`);
-    lines.push(`colonyCount: ${m.colonyCount ?? 0}`);
+    paragraphs.push(
+      `S5：colony ${m.colonyCount ?? w.colony.count()} 个；`
+      + `multicellularPersistence ${(m.multicellularPersistence ?? 0).toFixed(2)}，`
+      + `divisionOfLabor ${(m.divisionOfLabor ?? 0).toFixed(2)}。`,
+    );
   }
 
-  lines.push("");
-  lines.push("── 全部阶段 Tab 映射 ──");
-  for (const tab of STAGE_TABS) {
-    lines.push(`${tab.label} → ${tab.preset} (${tab.subtitle})`);
-  }
-
-  return lines.join("\n");
+  return paragraphs.join("\n\n");
 }
 
 /**
- * @param {Parameters<typeof buildDataRecord>[0]} ctx
+ * @param {Parameters<typeof buildSnapshotNarrative>[0]} ctx
  */
-export function printDataRecord(ctx) {
-  const text = buildDataRecord(ctx);
-  const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>MiraSpace 数据记录</title>
-<style>body{font-family:system-ui,sans-serif;padding:24px;line-height:1.5;white-space:pre-wrap;font-size:13px;color:#111}</style></head>
-<body>${text.replace(/</g, "&lt;")}</body></html>`;
+export function buildSnapshotText(ctx) {
+  const narrative = buildSnapshotNarrative(ctx);
+  const w = ctx.world;
+  const m = ctx.metrics;
 
-  const win = window.open("", "_blank", "width=720,height=640");
-  if (!win) {
-    console.log(text);
-    return;
+  const lines = [
+    "MiraSpace 快照",
+    `导出: ${new Date().toISOString()}`,
+    "",
+    "── 情况说明 ──",
+    narrative,
+    "",
+    "── 原始数据 ──",
+    `preset: ${ctx.presetName}`,
+    `seed: ${ctx.seed}`,
+    `simTime: ${ctx.simTime.toFixed(4)} s`,
+    `tick: ${ctx.tickCount}`,
+    `timeScale: ${ctx.timeScale}`,
+    `particles: ${w.particles.count()}`,
+  ];
+
+  if (w.replicator) lines.push(`strands: ${w.replicator.count()}`);
+  if (w.vesicle) lines.push(`vesicles: ${w.vesicle.count()}`);
+  if (w.colony) lines.push(`colonies: ${w.colony.count()}`);
+
+  lines.push("", "── S1 ──");
+  lines.push(`clusterIndex: ${m.clusterIndex} (avg ${m.clusterAvg})`);
+  lines.push(`autocatalyticScore: ${m.autocatalyticScore} (avg ${m.autocatalyticAvg})`);
+  lines.push(`negentropyFlux: ${m.negentropyFlux} (avg ${m.negentropyAvg})`);
+
+  if (w.replicator) {
+    lines.push("", "── S2 ──");
+    lines.push(`heritability: ${m.heritability} (avg ${m.heritabilityAvg})`);
+    lines.push(`selectiveSweep: ${m.selectiveSweep} (avg ${m.selectiveSweepAvg})`);
+    lines.push(`informationAccumulation: ${m.informationAccumulation} (avg ${m.informationAccumulationAvg})`);
+    lines.push(`parasiteFraction: ${m.parasiteFraction}`);
   }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  win.print();
+
+  if (w.vesicle) {
+    lines.push("", "── S3 ──");
+    lines.push(`encapsulationGain: ${m.encapsulationGain} (avg ${m.encapsulationGainAvg})`);
+    lines.push(`parasiteLoad: ${m.parasiteLoad} (avg ${m.parasiteLoadAvg})`);
+    lines.push(`fissionEvents: ${m.fissionEvents}`);
+    lines.push(`vesicleCount: ${m.vesicleCount}`);
+  }
+
+  if (w.chemoton) {
+    lines.push("", "── S4 ──");
+    lines.push(`chemotonCoherence: ${m.chemotonCoherence} (avg ${m.chemotonCoherenceAvg})`);
+    lines.push(`lineagePersistence: ${m.lineagePersistence} (avg ${m.lineagePersistenceAvg})`);
+    lines.push(`storageFidelity: ${m.storageFidelity}`);
+    lines.push(`chemotonCount: ${m.chemotonCount}`);
+  }
+
+  if (w.colony) {
+    lines.push("", "── S5 ──");
+    lines.push(`multicellularPersistence: ${m.multicellularPersistence} (avg ${m.multicellularPersistenceAvg})`);
+    lines.push(`divisionOfLabor: ${m.divisionOfLabor} (avg ${m.divisionOfLaborAvg})`);
+    lines.push(`developmentalPattern: ${m.developmentalPattern} (avg ${m.developmentalPatternAvg})`);
+    lines.push(`colonyCount: ${m.colonyCount}`);
+  }
+
+  lines.push("", "── 阶段 Tab ──");
+  for (const tab of STAGE_TABS) {
+    lines.push(`${tab.label}: ${tab.preset}`);
+  }
+
+  return lines.join("\n");
 }

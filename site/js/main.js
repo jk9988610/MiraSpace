@@ -13,7 +13,8 @@ import { createSimClock, parseTimeScaleFromUrl } from "./sim-clock.js";
 import { createControlPanel } from "./control-panel.js";
 import { createMilestoneToast } from "./milestone-toast.js";
 import { createMilestoneTracker } from "./milestone-tracker.js";
-import { printDataRecord } from "./data-export.js";
+import { buildSnapshotNarrative, buildSnapshotText } from "./data-export.js";
+import { createSnapshotModal } from "./snapshot-modal.js";
 import { createUiGuide, createSimObserver } from "./ui-guide.js";
 import { createInitPicker } from "./init-picker.js";
 
@@ -28,6 +29,7 @@ const stageNavContainer = document.getElementById("stage-nav");
 const controlPanelContainer = document.getElementById("control-panel");
 const topRightUi = document.getElementById("top-right-ui");
 const uiGuidePanel = document.getElementById("ui-guide-panel");
+const snapshotModalContainer = document.getElementById("snapshot-modal");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
 const hudPreset = document.getElementById("hud-preset");
@@ -123,6 +125,9 @@ let uiGuide = null;
 let simObserver = null;
 /** @type {ReturnType<typeof createInitPicker> | null} */
 let initPicker = null;
+/** @type {ReturnType<typeof createSnapshotModal> | null} */
+let snapshotModal = null;
+let snapshotAutoPaused = false;
 let frameStarted = false;
 
 function getGuideContext() {
@@ -149,9 +154,9 @@ function logGuide(message) {
   uiGuide?.pushLive(message);
 }
 
-function printCurrentRecord() {
-  if (!world || !activeTab) return;
-  printDataRecord({
+function getSnapshotContext() {
+  if (!world || !activeTab) return null;
+  return {
     presetName,
     stageLabel: activeTab.label,
     seed: currentSeed,
@@ -161,8 +166,36 @@ function printCurrentRecord() {
     paused: simClock.paused,
     metrics: world.metrics.formatHud(),
     world,
+  };
+}
+
+function openSnapshot() {
+  const ctx = getSnapshotContext();
+  if (!ctx || !snapshotModal) return;
+  if (snapshotModal.isOpen()) return;
+
+  snapshotAutoPaused = false;
+  if (!simClock.paused) {
+    simClock.paused = true;
+    snapshotAutoPaused = true;
+    syncControlPanelUi();
+  }
+
+  const narrative = buildSnapshotNarrative(ctx);
+  const copyText = buildSnapshotText(ctx);
+
+  snapshotModal.show(narrative, {
+    copyText,
+    onClose: () => {
+      if (snapshotAutoPaused) {
+        simClock.resume();
+        snapshotAutoPaused = false;
+        syncControlPanelUi();
+      }
+      logGuide("关闭快照");
+    },
   });
-  logGuide("打印数据记录（含全部阶段指标）");
+  logGuide("打开快照（已暂停模拟）");
 }
 
 function parseSeedFromUrl(defaultSeed) {
@@ -534,23 +567,11 @@ async function main() {
 
   milestoneToast = createMilestoneToast(topRightUi);
 
-  const btnGuide = document.createElement("button");
-  btnGuide.type = "button";
-  btnGuide.id = "btn-guide";
-  btnGuide.className = "top-right-ui__btn";
-  btnGuide.textContent = "说明";
-  btnGuide.setAttribute("aria-expanded", "false");
-  topRightUi.appendChild(btnGuide);
-
   milestoneTracker = createMilestoneTracker({
     onMilestone: (msg) => {
       milestoneToast?.show(msg);
       logGuide(msg);
     },
-  });
-
-  uiGuide = createUiGuide(uiGuidePanel, btnGuide, {
-    getContext: getGuideContext,
   });
 
   simObserver = createSimObserver((msg) => logGuide(msg));
@@ -583,10 +604,16 @@ async function main() {
     onReset: () => {
       void resetCurrentRun();
     },
-    onPrint: () => {
-      printCurrentRecord();
+    onSnapshot: () => {
+      openSnapshot();
     },
   });
+
+  uiGuide = createUiGuide(uiGuidePanel, controlPanel.btnGuide, {
+    getContext: getGuideContext,
+  });
+
+  snapshotModal = createSnapshotModal(snapshotModalContainer);
 
   const deepLinkTab = parseStageFromUrl(params);
   if (deepLinkTab) {
