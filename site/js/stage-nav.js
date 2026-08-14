@@ -167,6 +167,7 @@ export function createStageNav(container, handlers) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "stage-nav__tab";
+    if (tab.id === "earth") btn.classList.add("stage-nav__tab--earth");
     btn.setAttribute("role", "tab");
     btn.dataset.stageId = tab.id;
     btn.dataset.preset = tab.preset;

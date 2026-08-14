@@ -65,7 +65,7 @@ body {
 .init-picker {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 45;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -143,6 +143,16 @@ body {
   line-height: 1.3;
 }
 
+.init-picker__choice--earth {
+  border-color: rgba(120, 210, 180, 0.45);
+  background: rgba(24, 55, 48, 0.65);
+}
+
+.init-picker__choice--earth:hover {
+  border-color: rgba(140, 230, 200, 0.7);
+  background: rgba(35, 80, 65, 0.55);
+}
+
 .init-picker__hint {
   margin: 0.75rem 0 0;
   color: #6d849c;
@@ -166,53 +176,95 @@ body {
   top: calc(4.25rem + env(safe-area-inset-top));
   left: max(0.75rem, env(safe-area-inset-left));
   z-index: 10;
-  min-width: 11.5rem;
+  width: 9.5rem;
+  max-width: 10.5rem;
+  min-width: 0;
   max-height: calc(75vh - 4.25rem - env(safe-area-inset-top));
-  padding: 0.75rem 0.85rem;
+  padding: 0.55rem 0.6rem;
   border: 1px solid rgba(120, 160, 200, 0.25);
   border-radius: 0.5rem;
   background: rgba(8, 14, 24, 0.82);
   backdrop-filter: blur(8px);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   pointer-events: auto;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .hud__header {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.25rem 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
 .hud__title {
   font-weight: 700;
   letter-spacing: 0.06em;
+  font-size: 0.72rem;
 }
 
 .hud__stage {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   color: #7aa2c4;
+  line-height: 1.35;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .hud__row {
   display: flex;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin: 0.15rem 0;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0.12rem 0;
   color: #8fa3b8;
+  line-height: 1.35;
+}
+
+.hud__row--preset {
+  flex-wrap: wrap;
+}
+
+.hud__preset-value {
+  text-align: right;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  word-break: break-all;
+}
+
+.hud__row--stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem 0.35rem;
+  margin: 0.25rem 0 0.35rem;
+}
+
+.hud__kv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.hud__kv span {
+  font-size: 0.6rem;
+  color: #7aa2c4;
+  line-height: 1.25;
+}
+
+.hud__kv strong {
+  color: #e8f0f8;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
 }
 
 .hud__row strong {
   color: #e8f0f8;
   font-variant-numeric: tabular-nums;
-}
-
-.hud__row-spacer {
-  margin-left: 0.65rem;
-  color: #7aa2c4;
-  font-size: 0.72rem;
 }
 
 .hud__divider {
@@ -225,16 +277,16 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto auto auto;
-  gap: 0.1rem 0.5rem;
-  margin: 0.35rem 0;
+  gap: 0.08rem 0.35rem;
+  margin: 0.3rem 0;
 }
 
 .hud__sparkline {
   grid-column: 1 / -1;
   width: 100%;
-  max-width: 140px;
-  height: 28px;
-  margin-top: 0.15rem;
+  max-width: 100%;
+  height: 26px;
+  margin-top: 0.12rem;
   border-radius: 0.2rem;
   background: rgba(4, 8, 16, 0.55);
 }
@@ -244,14 +296,17 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: 0.25rem;
   color: #7aa2c4;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
+  line-height: 1.35;
 }
 
 .hud__metric-name {
   color: #9eb8d4;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .hud__metric-code {
@@ -267,8 +322,12 @@ body {
 
 .hud__metric-avg {
   justify-self: end;
-  color: #8fa3b8;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
+  color: #6d849c;
+  line-height: 1.3;
+  text-align: right;
+  max-width: 4.5rem;
+  word-break: break-word;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1103,7 +1162,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 30;
+  z-index: 55;
   padding: max(0.35rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
     0.35rem max(0.5rem, env(safe-area-inset-left));
   border-bottom: 1px solid rgba(120, 160, 200, 0.22);
@@ -1121,8 +1180,8 @@ body {
 
 .stage-nav__tab {
   flex: 1 1 auto;
-  min-width: 4.5rem;
-  max-width: 8rem;
+  min-width: 4.25rem;
+  max-width: 7.25rem;
   padding: 0.35rem 0.45rem 0.4rem;
   border: 1px solid rgba(100, 140, 180, 0.25);
   border-radius: 0.4rem;
@@ -1146,6 +1205,16 @@ body {
   border-color: rgba(120, 190, 255, 0.65);
   background: rgba(30, 70, 110, 0.55);
   box-shadow: inset 0 -2px 0 rgba(120, 190, 255, 0.85);
+}
+
+.stage-nav__tab--earth {
+  border-color: rgba(100, 190, 160, 0.35);
+}
+
+.stage-nav__tab--earth.stage-nav__tab--active {
+  border-color: rgba(120, 220, 180, 0.7);
+  background: rgba(28, 65, 52, 0.65);
+  box-shadow: inset 0 -2px 0 rgba(120, 220, 180, 0.85);
 }
 
 .stage-nav__label {

@@ -19,7 +19,7 @@ export function createInitPicker(container, handlers) {
         <p class="init-picker__lead">请选择要观察的科学阶段。选择后开始模拟；顶栏可随时切换阶段。</p>
       </header>
       <div class="init-picker__grid" role="list"></div>
-      <p class="init-picker__hint">深链接仍可用：<code>?preset=stage3-default&amp;seed=42</code></p>
+      <p class="init-picker__hint">深链接：<code>?preset=stage-earth-default&amp;seed=42</code> · 顶栏可随时切换至米拉地球</p>
     </div>
   `;
 
@@ -29,6 +29,7 @@ export function createInitPicker(container, handlers) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "init-picker__choice";
+    if (tab.id === "earth") btn.classList.add("init-picker__choice--earth");
     btn.setAttribute("role", "listitem");
     btn.setAttribute("aria-label", `${tab.label}：${tab.subtitle}`);
     btn.innerHTML = `

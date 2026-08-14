@@ -259,6 +259,11 @@ export class Metrics {
     return this._historyS5.map((row) => row[key]);
   }
 
+  /** @param {"trophicRichness"|"phenotypicArchetypeRichness"|"globalO2Rise"|"cyanophytePresence"|"heterotrophPresence"|"globalO2"} key */
+  getSparklineSeriesEarth(key) {
+    return this._historyEarth.map((row) => row[key]);
+  }
+
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
   _typeUnevenness(counts) {
     const total = counts.monomer + counts.catalyst + counts.dimer;

@@ -126,6 +126,18 @@ const sparkPersistence = document.getElementById("spark-persistence");
 const sparkLabor = document.getElementById("spark-labor");
 const sparkPattern = document.getElementById("spark-pattern");
 const sparkColonyCount = document.getElementById("spark-colony-count");
+const hudEarth = document.getElementById("hud-earth");
+const hudO2Rise = document.getElementById("hud-o2-rise");
+const hudO2RiseAvg = document.getElementById("hud-o2-rise-avg");
+const hudTrophic = document.getElementById("hud-trophic");
+const hudCyanophyte = document.getElementById("hud-cyanophyte");
+const hudHeterotroph = document.getElementById("hud-heterotroph");
+const hudPhenoRich = document.getElementById("hud-pheno-rich");
+const sparkO2Rise = document.getElementById("spark-o2-rise");
+const sparkTrophic = document.getElementById("spark-trophic");
+const sparkCyanophyte = document.getElementById("spark-cyanophyte");
+const sparkHeterotroph = document.getElementById("spark-heterotroph");
+const sparkPhenoRich = document.getElementById("spark-pheno-rich");
 
 /** @type {World | null} */
 let world = null;
@@ -461,8 +473,7 @@ function updateHud(w) {
     });
   }
 
-  if (w.fields.ecologyEnabled && hudRowAtmosphere) {
-    hudRowAtmosphere.hidden = false;
+  if (w.fields.ecologyEnabled && hudRowAtmosphere && !hudRowAtmosphere.hidden) {
     if (hudGlobalO2) hudGlobalO2.textContent = w.fields.globalO2.toFixed(3);
     if (hudGlobalCO2) hudGlobalCO2.textContent = w.fields.globalCO2.toFixed(3);
     if (hudTrophicRichness) {
@@ -471,8 +482,42 @@ function updateHud(w) {
     if (hudPhenotypicArch) {
       hudPhenotypicArch.textContent = String(m.phenotypicArchetypeRichness ?? 0);
     }
-  } else if (hudRowAtmosphere) {
-    hudRowAtmosphere.hidden = true;
+  }
+
+  if (w.metrics.earthEnabled && hudEarth && !hudEarth.hidden) {
+    const earth = presetRef.metricsThresholdsEarth;
+    const o2Rise = m.globalO2Rise ?? 0;
+    const trophic = m.trophicRichness ?? 0;
+    const cyan = m.cyanophytePresence ?? 0;
+    const hetero = m.heterotrophPresence ?? 0;
+    const phenoRich = m.phenotypicArchetypeRichness ?? 0;
+
+    if (hudO2Rise) hudO2Rise.textContent = o2Rise.toFixed(3);
+    if (hudO2RiseAvg) hudO2RiseAvg.textContent = `avg ${(m.globalO2Avg ?? m.globalO2Level ?? 0).toFixed(3)}`;
+    if (hudTrophic) hudTrophic.textContent = String(trophic);
+    if (hudCyanophyte) hudCyanophyte.textContent = cyan >= 1 ? "是" : "否";
+    if (hudHeterotroph) hudHeterotroph.textContent = hetero >= 1 ? "是" : "否";
+    if (hudPhenoRich) hudPhenoRich.textContent = String(phenoRich);
+
+    drawSparkline(sparkO2Rise, w.metrics.getSparklineSeriesEarth("globalO2Rise"), {
+      color: "#7fd4a8",
+      threshold: earth?.globalO2Rise,
+    });
+    drawSparkline(sparkTrophic, w.metrics.getSparklineSeriesEarth("trophicRichness"), {
+      color: "#8ec8ff",
+      threshold: earth?.trophicRichness,
+    });
+    drawSparkline(sparkCyanophyte, w.metrics.getSparklineSeriesEarth("cyanophytePresence"), {
+      color: "#a8e6cf",
+      threshold: earth?.cyanophytePresence,
+    });
+    drawSparkline(sparkHeterotroph, w.metrics.getSparklineSeriesEarth("heterotrophPresence"), {
+      color: "#ffd3a5",
+      threshold: earth?.heterotrophPresence,
+    });
+    drawSparkline(sparkPhenoRich, w.metrics.getSparklineSeriesEarth("phenotypicArchetypeRichness"), {
+      color: "#c5b3ff",
+    });
   }
 
   milestoneTracker?.check(m, presetRef);

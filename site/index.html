@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="MiraSpace — 米拉空间数字生命演化模拟">
   <title>MiraSpace · 米拉空间</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260814e8">
 </head>
 <body class="app-shell app-shell--pending">
   <div id="portrait-overlay" class="portrait-overlay" hidden>
     <div class="portrait-overlay__content">
       <h1>MiraSpace</h1>
       <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
-      <p class="portrait-overlay__hint">米拉空间 · 前生物化学 → 多细胞生物</p>
+      <p class="portrait-overlay__hint">米拉空间 · 前生物化学 → 多细胞 → 米拉地球</p>
     </div>
   </div>
 
@@ -28,9 +28,9 @@
       <span class="hud__title">MiraSpace</span>
       <span id="hud-stage" class="hud__stage">S1</span>
     </header>
-    <div class="hud__row">
+    <div class="hud__row hud__row--preset">
       <span>Preset</span>
-      <strong id="hud-preset">stage0-default</strong>
+      <strong id="hud-preset" class="hud__preset-value">stage0-default</strong>
     </div>
     <div class="hud__row">
       <span>Seed</span>
@@ -48,15 +48,23 @@
       <span>粒子</span>
       <strong id="hud-particles">0</strong>
     </div>
-    <div class="hud__row hud__row--earth" id="hud-row-atmosphere" data-stage="earth" hidden>
-      <span>大气 O₂</span>
-      <strong id="hud-global-o2">—</strong>
-      <span class="hud__row-spacer">CO₂</span>
-      <strong id="hud-global-co2">—</strong>
-      <span class="hud__row-spacer">营养级</span>
-      <strong id="hud-trophic-richness">—</strong>
-      <span class="hud__row-spacer">表观分工</span>
-      <strong id="hud-phenotypic-arch">—</strong>
+    <div class="hud__row hud__row--earth hud__row--stack" id="hud-row-atmosphere" data-stage="earth" hidden>
+      <div class="hud__kv">
+        <span>大气 O₂</span>
+        <strong id="hud-global-o2">—</strong>
+      </div>
+      <div class="hud__kv">
+        <span>大气 CO₂</span>
+        <strong id="hud-global-co2">—</strong>
+      </div>
+      <div class="hud__kv">
+        <span>营养级数</span>
+        <strong id="hud-trophic-richness">—</strong>
+      </div>
+      <div class="hud__kv">
+        <span>表观分工</span>
+        <strong id="hud-phenotypic-arch">—</strong>
+      </div>
     </div>
     <div class="hud__row hud__row--s3" id="hud-row-vesicles" data-stage="s3" data-entity-count="vesicle" hidden>
       <span>原细胞膜泡</span>
@@ -196,6 +204,40 @@
         <span id="hud-colony-count" class="hud__metric-value">—</span>
         <span class="hud__metric-avg">观测</span>
         <canvas id="spark-colony-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+    </div>
+    <div id="hud-earth" data-stage="earth" hidden>
+      <hr class="hud__divider">
+      <p class="hud__section" data-stage-section="earth">米拉地球</p>
+      <div class="hud__metric">
+        <span class="hud__metric-label" data-metric="globalO2Rise"></span>
+        <span id="hud-o2-rise" class="hud__metric-value">—</span>
+        <span id="hud-o2-rise-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-o2-rise" class="hud__sparkline" width="120" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label" data-metric="trophicRichness"></span>
+        <span id="hud-trophic" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">当前</span>
+        <canvas id="spark-trophic" class="hud__sparkline" width="120" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label" data-metric="cyanophytePresence"></span>
+        <span id="hud-cyanophyte" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-cyanophyte" class="hud__sparkline" width="120" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label" data-metric="heterotrophPresence"></span>
+        <span id="hud-heterotroph" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-heterotroph" class="hud__sparkline" width="120" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label" data-metric="phenotypicArchetypeRichness"></span>
+        <span id="hud-pheno-rich" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">当前</span>
+        <canvas id="spark-pheno-rich" class="hud__sparkline" width="120" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
     <p class="hud__help">?seed= & ?preset= & ?timeScale= · 虚线=门槛</p>
