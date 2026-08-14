@@ -9,7 +9,7 @@ import { TIME_SCALES, normalizeTimeScale } from "./sim-clock.js";
  *   onGridToggle: () => void,
  *   onFieldToggle: () => void,
  *   onReset: () => void,
- *   onPrint: () => void,
+ *   onSnapshot: () => void,
  * }} handlers
  */
 export function createControlPanel(container, handlers) {
@@ -84,19 +84,28 @@ export function createControlPanel(container, handlers) {
 
   container.appendChild(rowView);
 
-  const rowPrint = document.createElement("div");
-  rowPrint.className = "control-panel__row";
+  const rowTools = document.createElement("div");
+  rowTools.className = "control-panel__row";
 
-  const btnPrint = document.createElement("button");
-  btnPrint.type = "button";
-  btnPrint.id = "btn-print";
-  btnPrint.className = "control-panel__btn control-panel__btn--print";
-  btnPrint.textContent = "打印记录";
-  btnPrint.title = "打印全部阶段指标数据记录";
-  btnPrint.addEventListener("click", handlers.onPrint);
-  rowPrint.appendChild(btnPrint);
+  const btnGuide = document.createElement("button");
+  btnGuide.type = "button";
+  btnGuide.id = "btn-guide";
+  btnGuide.className = "control-panel__btn control-panel__btn--guide";
+  btnGuide.textContent = "说明";
+  btnGuide.title = "界面说明与场上直播";
+  btnGuide.setAttribute("aria-expanded", "false");
+  rowTools.appendChild(btnGuide);
 
-  container.appendChild(rowPrint);
+  const btnSnapshot = document.createElement("button");
+  btnSnapshot.type = "button";
+  btnSnapshot.id = "btn-snapshot";
+  btnSnapshot.className = "control-panel__btn control-panel__btn--snapshot";
+  btnSnapshot.textContent = "快照";
+  btnSnapshot.title = "截取此刻情况说明";
+  btnSnapshot.addEventListener("click", handlers.onSnapshot);
+  rowTools.appendChild(btnSnapshot);
+
+  container.appendChild(rowTools);
 
   /**
    * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean }} state
@@ -125,5 +134,5 @@ export function createControlPanel(container, handlers) {
     showField: true,
   });
 
-  return { syncUi, btnPause, btnGrid, btnField };
+  return { syncUi, btnPause, btnGrid, btnField, btnGuide };
 }
