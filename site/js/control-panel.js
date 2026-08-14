@@ -117,7 +117,7 @@ export function createControlPanel(container, handlers) {
   container.appendChild(rowTools);
 
   /**
-   * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean }} state
+   * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean, fieldHeatmapMode?: string }} state
    */
   function syncUi(state) {
     btnPause.textContent = state.paused ? "▶" : "⏸";
@@ -133,6 +133,13 @@ export function createControlPanel(container, handlers) {
     }
 
     btnGrid.setAttribute("aria-pressed", String(state.showGrid));
+    const heatLabels = {
+      drive: "热力·驱动",
+      energy: "热力·能量",
+      waste: "热力·废物",
+      off: "热力·关",
+    };
+    btnField.textContent = heatLabels[state.fieldHeatmapMode ?? "off"] ?? "热力";
     btnField.setAttribute("aria-pressed", String(state.showField));
   }
 
@@ -141,6 +148,7 @@ export function createControlPanel(container, handlers) {
     timeScale: handlers.getTimeScale(),
     showGrid: true,
     showField: true,
+    fieldHeatmapMode: "drive",
   });
 
   return { syncUi, btnPause, btnGrid, btnField, btnGuide, btnConditions };

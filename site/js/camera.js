@@ -85,8 +85,8 @@ export class Camera {
     if (!this._panning || e.pointerId !== this._activePointerId) return;
     const dx = e.clientX - this._startScreenX;
     const dy = e.clientY - this._startScreenY;
-    this.camX = this._startCamX - dx / this.zoom;
-    this.camY = this._startCamY + dy / this.zoom;
+    this.camX = wrapCoord(this._startCamX - dx / this.zoom, this.worldWidth);
+    this.camY = wrapCoord(this._startCamY + dy / this.zoom, this.worldHeight);
   }
 
   /** @param {PointerEvent} e @param {HTMLElement} canvas */

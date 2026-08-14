@@ -794,6 +794,20 @@ body {
   background: linear-gradient(135deg, rgba(40, 100, 80, 0.5), rgba(80, 200, 140, 0.85));
 }
 
+.ui-guide__swatch--drive {
+  border-radius: 4px;
+  width: 1.15rem;
+  height: 1.15rem;
+  background: linear-gradient(135deg, rgba(60, 120, 200, 0.55), rgba(120, 220, 255, 0.9));
+}
+
+.ui-guide__swatch--waste {
+  border-radius: 4px;
+  width: 1.15rem;
+  height: 1.15rem;
+  background: linear-gradient(135deg, rgba(120, 40, 80, 0.55), rgba(220, 80, 140, 0.85));
+}
+
 .ui-guide-panel {
   position: fixed;
   top: calc(7.5rem + env(safe-area-inset-top));

@@ -85,6 +85,15 @@ export class Fields {
   }
 
   /**
+   * Monomer energy-gradient pull strength (what drives monomer drift along the field).
+   * @param {number} wx @param {number} wy
+   */
+  driveStrength(wx, wy) {
+    const g = this.energyGradient(wx, wy, 12);
+    return Math.min(1, Math.hypot(g.x, g.y) * 10);
+  }
+
+  /**
    * @param {number} dt
    * @param {import('./particles.js').Particles} particles
    */
@@ -148,34 +157,74 @@ export class Fields {
   }
 
   /**
-   * Draw energy heatmap for the visible viewport only.
+   * Draw field heatmap for movement drivers (energy / waste / gradient drive).
    * @param {CanvasRenderingContext2D} ctx
    * @param {import('./camera.js').Camera} camera
+   * @param {"drive" | "energy" | "waste"} mode
    */
-  drawHeatmap(ctx, camera) {
+  drawHeatmap(ctx, camera, mode = "energy") {
     const bounds = camera.getViewBounds();
     const tile = this.heatmapTileSize;
     const opacity = this.heatmapOpacity;
+    const margin = tile * 2;
 
-    const startX = Math.floor(bounds.left / tile) * tile;
-    const endX = Math.ceil(bounds.right / tile) * tile;
-    const startY = Math.floor(bounds.bottom / tile) * tile;
-    const endY = Math.ceil(bounds.top / tile) * tile;
+    const xShifts = this._wrapShifts(bounds.left, bounds.right, margin, this.worldWidth);
+    const yShifts = this._wrapShifts(bounds.bottom, bounds.top, margin, this.worldHeight);
 
-    for (let wx = startX; wx < endX; wx += tile) {
-      for (let wy = startY; wy < endY; wy += tile) {
-        const e = this.sampleEnergy(wx + tile * 0.5, wy + tile * 0.5);
-        const r = 20 + e * 40;
-        const g = 40 + e * 120;
-        const b = 60 + e * 80;
-        const a = opacity * (0.35 + e * 0.65);
+    for (const ox of xShifts) {
+      for (const oy of yShifts) {
+        const startX = Math.floor(bounds.left / tile) * tile;
+        const endX = Math.ceil(bounds.right / tile) * tile;
+        const startY = Math.floor(bounds.bottom / tile) * tile;
+        const endY = Math.ceil(bounds.top / tile) * tile;
 
-        const tl = camera.worldToScreen(wx, wy + tile);
-        const br = camera.worldToScreen(wx + tile, wy);
-        ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
-        ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+        for (let wx = startX; wx < endX; wx += tile) {
+          for (let wy = startY; wy < endY; wy += tile) {
+            const sampleX = wx + ox + tile * 0.5;
+            const sampleY = wy + oy + tile * 0.5;
+            let r = 20;
+            let g = 40;
+            let b = 60;
+            let v = 0;
+
+            if (mode === "energy") {
+              v = this.sampleEnergy(sampleX, sampleY);
+              r = 20 + v * 40;
+              g = 40 + v * 120;
+              b = 60 + v * 80;
+            } else if (mode === "waste") {
+              v = Math.min(1, this.sampleWaste(sampleX, sampleY) * 2.5);
+              r = 80 + v * 140;
+              g = 30 + v * 40;
+              b = 90 + v * 50;
+            } else {
+              v = this.driveStrength(sampleX, sampleY);
+              r = 40 + v * 40;
+              g = 60 + v * 160;
+              b = 200 + v * 40;
+            }
+
+            const a = opacity * (0.28 + v * 0.72);
+            const drawX = wx + ox;
+            const drawY = wy + oy;
+            const tl = camera.worldToScreen(drawX, drawY + tile);
+            const br = camera.worldToScreen(drawX + tile, drawY);
+            ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+            ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+          }
+        }
       }
     }
+  }
+
+  /**
+   * @param {number} low @param {number} high @param {number} margin @param {number} size
+   */
+  _wrapShifts(low, high, margin, size) {
+    const shifts = [0];
+    if (low < margin) shifts.push(size);
+    if (high > size - margin) shifts.push(-size);
+    return shifts;
   }
 
   /** @param {Float32Array} field @param {number} wx @param {number} wy */
