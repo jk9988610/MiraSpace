@@ -1,38 +1,30 @@
 /**
- * Top-right milestone toast: 1s auto-hide, replaced by newer messages.
+ * Milestone danmaku: messages fly left-to-right across the canvas area.
  * @param {HTMLElement} container
  */
 export function createMilestoneToast(container) {
-  container.className = "milestone-toast-wrap";
+  container.className = "danmaku-layer";
+  container.setAttribute("role", "status");
+  container.setAttribute("aria-live", "polite");
 
-  const el = document.createElement("div");
-  el.id = "milestone-toast";
-  el.className = "milestone-toast";
-  el.hidden = true;
-  el.setAttribute("role", "status");
-  el.setAttribute("aria-live", "polite");
-  container.appendChild(el);
-
-  /** @type {ReturnType<typeof setTimeout> | 0} */
-  let timer = 0;
+  let laneCursor = 0;
 
   /** @param {string} message */
   function show(message) {
-    el.textContent = message;
-    el.hidden = false;
-    el.classList.remove("milestone-toast--fade");
-    void el.offsetWidth;
-    el.classList.add("milestone-toast--show");
+    if (!message) return;
 
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      el.classList.remove("milestone-toast--show");
-      el.classList.add("milestone-toast--fade");
-      timer = setTimeout(() => {
-        el.hidden = true;
-        el.classList.remove("milestone-toast--fade");
-      }, 180);
-    }, 1000);
+    const el = document.createElement("div");
+    el.className = "danmaku-item";
+    el.textContent = message;
+
+    const lane = laneCursor % 9;
+    laneCursor += 1;
+    el.style.top = `${14 + lane * 6.5}%`;
+    el.style.animationDuration = `${7.5 + (lane % 3) * 1.2}s`;
+    el.style.animationDelay = `${lane * 0.04}s`;
+
+    container.appendChild(el);
+    el.addEventListener("animationend", () => el.remove(), { once: true });
   }
 
   return { show };
