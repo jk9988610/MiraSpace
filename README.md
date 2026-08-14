@@ -187,6 +187,7 @@ site/
     └── stage5-default.json
 scripts/
 ├── test-gene-expression.mjs  # E1 基因表达解码/通量
+├── test-gene-flux.mjs        # E3 基因通量耦合
 ├── run-suite.mjs
 ├── smoke-test.mjs
 ├── s5-headless-test.mjs
