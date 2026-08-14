@@ -1,8 +1,12 @@
 /**
  * Milestone danmaku: messages fly left-to-right across the canvas area.
- * @param {HTMLElement} container
+ * @param {HTMLElement | null} container
  */
 export function createMilestoneToast(container) {
+  if (!container) {
+    return { show: () => {} };
+  }
+
   container.className = "danmaku-layer";
   container.setAttribute("role", "status");
   container.setAttribute("aria-live", "polite");

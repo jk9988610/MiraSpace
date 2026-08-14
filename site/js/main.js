@@ -28,7 +28,25 @@ const portraitOverlay = document.getElementById("portrait-overlay");
 const initPickerContainer = document.getElementById("init-picker");
 const stageNavContainer = document.getElementById("stage-nav");
 const controlPanelContainer = document.getElementById("control-panel");
-const danmakuLayer = document.getElementById("danmaku-layer");
+
+/** Ensure danmaku layer exists (tolerates stale HTML without #danmaku-layer). */
+function ensureDanmakuLayer() {
+  let el = document.getElementById("danmaku-layer");
+  if (el) return el;
+
+  el = document.createElement("div");
+  el.id = "danmaku-layer";
+  el.setAttribute("aria-live", "polite");
+  const canvasEl = document.getElementById("world-canvas");
+  if (canvasEl?.parentNode) {
+    canvasEl.parentNode.insertBefore(el, canvasEl.nextSibling);
+  } else {
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+const danmakuLayer = ensureDanmakuLayer();
 const uiGuidePanel = document.getElementById("ui-guide-panel");
 const snapshotModalContainer = document.getElementById("snapshot-modal");
 const conditionsTreeContainer = document.getElementById("conditions-tree");
