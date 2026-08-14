@@ -12,6 +12,7 @@ export class Metrics {
     this.thresholds = preset.metricsThresholds;
     this.updateEvery = this.thresholds.updateEveryTicks ?? 10;
     this.sustainSeconds = this.thresholds.sustainSeconds ?? 60;
+    this.historyMaxSamples = preset.performance?.metricsHistoryMaxSamples ?? 200;
     this.worldArea = preset.world.width * preset.world.height;
 
     this.initialUnevenness = this._typeUnevenness(initialCounts);
@@ -26,7 +27,6 @@ export class Metrics {
     this.negentropyAvg = 1;
 
     this._history = [];
-    this._windowSimTime = 0;
 
     this._intervalDimersCreated = 0;
     this._intervalDimersNearCat = 0;
@@ -60,6 +60,11 @@ export class Metrics {
     this._intervalDimersCreated = 0;
     this._intervalDimersNearCat = 0;
     this._intervalTicks = 0;
+  }
+
+  /** @param {"clusterIndex"|"autocatalyticScore"|"negentropyFlux"} key */
+  getSparklineSeries(key) {
+    return this._history.map((row) => row[key]);
   }
 
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
@@ -128,6 +133,9 @@ export class Metrics {
     this._history.push({ t: simTime, ...sample });
     const minTime = simTime - this.sustainSeconds;
     while (this._history.length > 0 && this._history[0].t < minTime) {
+      this._history.shift();
+    }
+    while (this._history.length > this.historyMaxSamples) {
       this._history.shift();
     }
 

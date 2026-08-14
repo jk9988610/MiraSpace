@@ -60,6 +60,13 @@
   },
   "render": {
     "showGrid": true,
-    "gridStep": 128
+    "gridStep": 128,
+    "heatmapTileSize": 24
+  },
+  "performance": {
+    "fieldUpdateStride": 2,
+    "heatmapTileSize": 24,
+    "spatialCellSize": 64,
+    "metricsHistoryMaxSamples": 200
   }
 }

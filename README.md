@@ -1,10 +1,10 @@
 # MiraSpace
 
-米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**P0 观察基底** + **S1 前生物底物**（阶段 0）。
+米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**P0 观察基底** + **S1 前生物底物** + **P2 polish**（阶段 0）。
 
 ## 在线访问
 
-部署后可通过 GitHub Pages 访问：`https://jk9988610.github.io/MiraSpace/`
+https://jk9988610.github.io/MiraSpace/
 
 ## 本地运行
 
@@ -13,7 +13,7 @@
 ```bash
 cd site
 python3 -m http.server 8080
-# 浏览器打开 http://localhost:8080
+# 浏览器打开 http://localhost:8080/?seed=42
 ```
 
 ## 功能（阶段 0）
@@ -22,6 +22,7 @@ python3 -m http.server 8080
 |------|------|
 | **P0** | 全屏 Canvas、横屏优先、世界坐标（Y 向上）、单指平移、固定 30 Hz tick、周期边界、暂停 |
 | **S1** | `energy` / `waste` 扩散场、monomer / catalyst / dimer 粒子、三项涌现指标 HUD |
+| **P2** | `?seed=` 复现、60 s 指标 sparkline（虚线=门槛）、场更新降采样、粒子/热力图视口裁剪 |
 
 ## S1 指标
 
@@ -31,9 +32,38 @@ python3 -m http.server 8080
 
 门槛常量见 `site/data/presets/stage0-default.json` 中的 `metricsThresholds`。
 
+### 示例运行（seed=42，600 sim s ≈ 10 min）
+
+Headless 长跑脚本输出（2026-08-14）：
+
+| 指标 | 当前值 | 60 s 滑动平均 |
+|------|--------|---------------|
+| `clusterIndex` | 386.31 | 374.04 |
+| `autocatalyticScore` | 0.50 | 0.61 |
+| `negentropyFlux` | 0.97 | 0.96 |
+
+粒子：`637`（monomer 594 · catalyst 40 · dimer 3），峰值 `640`，未触顶 `maxCount=4000`。
+
+> 注：`clusterIndex` 在 dimer 极稀疏时会因「局部/全局密度比」而数值很大；这是指标定义下的正常行为，不代表已达 S2 启动阈。S2 复制子模块**尚未实现**。
+
 ## URL 参数
 
-- `?seed=42` — 复现随机初始化（默认 42）
+- `?seed=42` — 复现随机初始化（默认 42）；HUD 显示当前 seed
+
+## S1 测试清单
+
+| 项 | 结果 | 验证方式 |
+|----|------|----------|
+| 横屏单指拖动 + wrap 连续 | 通过 | 浏览器手测 |
+| 竖屏提示层、不崩溃 | 通过 | 浏览器手测 |
+| 暂停：画面与指标冻结 | 通过 | `scripts/s1-headless-test.mjs` |
+| 10 min 长跑：粒子 ≤ max、无 history 泄漏 | 通过 | headless 18000 ticks |
+| 改 seed 可复现 | 通过 | 同 seed 500 tick 指纹一致 |
+
+```bash
+node scripts/s1-headless-test.mjs
+# exit 0 = 全部通过
+```
 
 ## 文档
 
@@ -49,6 +79,7 @@ python3 -m http.server 8080
 - **不**实现可遗传复制子、膜个体、RNA/DNA 命名实体
 - **不**按 RNA→DNA→细胞 线性排期
 - **不**脚本伪造涌现
+- S1 验证通过前**不**进入 S2 达尔文阈值
 
 ## 目录结构
 
@@ -62,7 +93,10 @@ site/
 │   ├── world.js
 │   ├── fields.js
 │   ├── particles.js
-│   └── metrics.js
+│   ├── metrics.js
+│   └── sparkline.js
 └── data/presets/
     └── stage0-default.json
+scripts/
+└── s1-headless-test.mjs
 ```
