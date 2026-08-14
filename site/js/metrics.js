@@ -64,6 +64,7 @@ export class Metrics {
     this.parasiteLoadAvg = 1;
     this._historyS3 = [];
     this._fissionLog = [];
+    this._pendingFissionEvents = 0;
 
     this.s4Enabled = !!preset.chemoton;
     this.chemoton = chemoton;
@@ -105,6 +106,10 @@ export class Metrics {
     this._intervalDimersCreated += particleEvents.dimersCreated;
     this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
+
+    if (vesicleEvents?.fissionEvents) {
+      this._pendingFissionEvents += vesicleEvents.fissionEvents;
+    }
 
     if (tick % this.updateEvery !== 0) return;
 
@@ -331,9 +336,11 @@ export class Metrics {
    * @param {object | null} vesicleEvents
    */
   _recordS3(simTime, replicator, vesicle, vesicleEvents) {
-    if (vesicleEvents?.fissionEvents) {
-      this._fissionLog.push({ t: simTime, n: vesicleEvents.fissionEvents });
+    if (this._pendingFissionEvents > 0) {
+      this._fissionLog.push({ t: simTime, n: this._pendingFissionEvents });
+      this._pendingFissionEvents = 0;
     }
+    void vesicleEvents;
 
     const fWindow = this.s3Thresholds?.sustainSeconds?.fissionEvents ?? 300;
     while (this._fissionLog.length > 0 && this._fissionLog[0].t < simTime - fWindow) {
@@ -461,7 +468,7 @@ export class Metrics {
    * @param {import('./colony.js').Colony} colony
    */
   _recordS5(simTime, vesicle, chemoton, colony) {
-    this.multicellularPersistence = colony.multicellularPersistenceRatio();
+    this.multicellularPersistence = colony.multicellularPersistenceRatio(vesicle);
     this.divisionOfLabor = colony.divisionOfLaborShare(vesicle);
     this.developmentalPattern = colony.developmentalPatternScore(vesicle);
     this.colonyCount = colony.count();

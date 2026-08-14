@@ -310,8 +310,17 @@ export class Vesicle {
     const monomerFactor = Math.max(0.2, Math.min(monomers, 8) / 4);
     if (v.membraneEnergy < this.cfg.maintenanceCost * 1.5) return;
 
-    const growth = this.cfg.growthRate * dt * monomerFactor;
+    const growth = this.cfg.growthRate * dt * monomerFactor
+      * (this.chemoton && v.interior.size > 0 ? 1.1 : 1);
     v.radius = Math.min(this.cfg.radiusMax, v.radius + growth);
+
+    if (this.chemoton && v.chemoton && v.interior.size === 0) {
+      const threshold = (this.cfg.fissionThresholdRatio ?? 0.9) * this.cfg.radiusMax;
+      const coherenceMin = this.chemoton.cfg.coherenceMinTicks ?? 90;
+      if (v.radius > threshold * 1.02 && v.chemoton.coherenceTicks < coherenceMin) {
+        v.radius = threshold * 1.02;
+      }
+    }
     v.membraneEnergy -= this.cfg.maintenanceCost * 0.35 * dt;
   }
 
@@ -341,9 +350,11 @@ export class Vesicle {
    */
   _tryFission(v, replicator, rng, events, simTime) {
     const threshold = (this.cfg.fissionThresholdRatio ?? 0.9) * this.cfg.radiusMax;
-    if (v.radius < threshold) return;
-
-    if (this.chemoton && !this.chemoton.canFission(v, threshold)) return;
+    if (this.chemoton) {
+      if (!this.chemoton.canFission(v, threshold)) return;
+    } else if (v.radius < threshold) {
+      return;
+    }
 
     if (v.membraneEnergy < this.cfg.maintenanceCost * 8) {
       v._pendingLysis = true;

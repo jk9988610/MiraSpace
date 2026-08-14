@@ -100,7 +100,13 @@ export class Chemoton {
       attempts += 1;
       if (row.success) successes += 1;
     }
-    c.geneticActivity = attempts > 0 ? successes / attempts : c.geneticActivity * 0.98;
+    if (attempts > 0) {
+      const successRate = successes / Math.max(1e-6, window);
+      const norm = this.cfg.geneticNormalize ?? 0.025;
+      c.geneticActivity = clamp01(successRate / norm);
+    } else {
+      c.geneticActivity = Math.max(0, c.geneticActivity * 0.98);
+    }
 
     const min = this.cfg.subsystemMin ?? 0.35;
     if (c.metabolicFlux > min && c.membraneHealth > min && c.geneticActivity > min) {
@@ -155,9 +161,14 @@ export class Chemoton {
   canFission(v, radiusThreshold) {
     if (!v.chemoton) return v.radius >= radiusThreshold;
     const c = v.chemoton;
-    return v.radius >= radiusThreshold
+    const coherenceMin = this.cfg.coherenceMinTicks ?? 90;
+    let effectiveThreshold = radiusThreshold;
+    if (c.coherenceTicks >= coherenceMin && v.interior?.size > 0) {
+      effectiveThreshold *= 0.88;
+    }
+    return v.radius >= effectiveThreshold
       && this.fitness(v) >= (this.cfg.fissionFitnessMin ?? 0.4)
-      && c.coherenceTicks >= (this.cfg.coherenceMinTicks ?? 90);
+      && c.coherenceTicks >= coherenceMin;
   }
 
   /** @param {object} v */
