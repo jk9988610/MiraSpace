@@ -209,6 +209,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.hud__row-spacer {
+  margin-left: 0.65rem;
+  color: #7aa2c4;
+  font-size: 0.72rem;
+}
+
 .hud__divider {
   margin: 0.55rem 0;
   border: none;
