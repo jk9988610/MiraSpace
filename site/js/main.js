@@ -11,6 +11,10 @@ import {
 } from "./stage-nav.js";
 import { createSimClock, parseTimeScaleFromUrl } from "./sim-clock.js";
 import { createControlPanel } from "./control-panel.js";
+import { createMilestoneToast } from "./milestone-toast.js";
+import { createMilestoneTracker } from "./milestone-tracker.js";
+import { printDataRecord } from "./data-export.js";
+import { createUiGuide, createSimObserver } from "./ui-guide.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -20,6 +24,8 @@ const ctx = canvas.getContext("2d", { alpha: false });
 const portraitOverlay = document.getElementById("portrait-overlay");
 const stageNavContainer = document.getElementById("stage-nav");
 const controlPanelContainer = document.getElementById("control-panel");
+const topRightUi = document.getElementById("top-right-ui");
+const uiGuidePanel = document.getElementById("ui-guide-panel");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
 const hudPreset = document.getElementById("hud-preset");
@@ -104,6 +110,54 @@ let simClock = createSimClock({ timeScale: 1 });
 let stageNav = null;
 /** @type {ReturnType<typeof createControlPanel> | null} */
 let controlPanel = null;
+/** @type {ReturnType<typeof createMilestoneToast> | null} */
+let milestoneToast = null;
+/** @type {ReturnType<typeof createMilestoneTracker> | null} */
+let milestoneTracker = null;
+/** @type {ReturnType<typeof createUiGuide> | null} */
+let uiGuide = null;
+/** @type {ReturnType<typeof createSimObserver> | null} */
+let simObserver = null;
+
+function getGuideContext() {
+  if (!world) return null;
+  const m = world.metrics.formatHud();
+  return {
+    stageLabel: activeTab.label,
+    presetName,
+    seed: currentSeed,
+    simTime: world.simTime,
+    tickCount: world.tickCount,
+    timeScale: simClock.timeScale,
+    paused: simClock.paused,
+    hudStage: hudStage?.textContent ?? "",
+    particleCount: world.particles.count(),
+    strandCount: world.replicator?.count() ?? null,
+    vesicleCount: world.vesicle?.count() ?? null,
+    metrics: m,
+  };
+}
+
+/** @param {string} message */
+function logGuide(message) {
+  uiGuide?.pushLive(message);
+}
+
+function printCurrentRecord() {
+  if (!world) return;
+  printDataRecord({
+    presetName,
+    stageLabel: activeTab.label,
+    seed: currentSeed,
+    simTime: world.simTime,
+    tickCount: world.tickCount,
+    timeScale: simClock.timeScale,
+    paused: simClock.paused,
+    metrics: world.metrics.formatHud(),
+    world,
+  });
+  logGuide("打印数据记录（含全部阶段指标）");
+}
 
 function parseSeedFromUrl(defaultSeed) {
   const params = new URLSearchParams(window.location.search);
@@ -329,6 +383,12 @@ function updateHud(w) {
       color: "#7ec8ff",
     });
   }
+
+  milestoneTracker?.check(m, presetRef);
+  simObserver?.observe(w, w.tickCount);
+  if (uiGuide?.isOpen()) {
+    uiGuide.updateStatic();
+  }
 }
 
 function syncUrl() {
@@ -365,6 +425,8 @@ function initWorld(seed, opts = {}) {
   }
   resizeCanvas();
   syncControlPanelUi();
+  milestoneTracker?.reset();
+  simObserver?.reset();
 }
 
 /** @param {World} w */
@@ -420,11 +482,13 @@ async function switchStage(tab, seed, opts = {}) {
   if (opts.toast) {
     stageNav?.showToast(`已切换至：${tab.label}`);
   }
+  logGuide(`切换阶段：${tab.label}（${tab.preset}）`);
 }
 
 async function resetCurrentRun() {
   initWorld(currentSeed, { resetPause: true });
   syncUrl();
+  logGuide("重置当前 run（同 preset + seed）");
 }
 
 async function main() {
@@ -444,29 +508,59 @@ async function main() {
     },
   });
 
+  milestoneToast = createMilestoneToast(topRightUi);
+
+  const btnGuide = document.createElement("button");
+  btnGuide.type = "button";
+  btnGuide.id = "btn-guide";
+  btnGuide.className = "top-right-ui__btn";
+  btnGuide.textContent = "说明";
+  btnGuide.setAttribute("aria-expanded", "false");
+  topRightUi.appendChild(btnGuide);
+
+  milestoneTracker = createMilestoneTracker({
+    onMilestone: (msg) => {
+      milestoneToast?.show(msg);
+      logGuide(msg);
+    },
+  });
+
+  uiGuide = createUiGuide(uiGuidePanel, btnGuide, {
+    getContext: getGuideContext,
+  });
+
+  simObserver = createSimObserver((msg) => logGuide(msg));
+
   controlPanel = createControlPanel(controlPanelContainer, {
     getTimeScale: () => simClock.timeScale,
     onPauseToggle: () => {
       simClock.togglePause();
       syncControlPanelUi();
+      logGuide(simClock.paused ? "暂停模拟" : "继续模拟");
     },
     onTimeScale: (scale) => {
       simClock.setTimeScale(scale);
       syncUrl();
       syncControlPanelUi();
+      logGuide(`时间倍率：${scale}×`);
     },
     onGridToggle: () => {
       if (!world) return;
       world.toggleGrid();
       syncControlPanelUi();
+      logGuide(world.showGrid ? "开启网格" : "关闭网格");
     },
     onFieldToggle: () => {
       if (!world) return;
       world.toggleFieldHeatmap();
       syncControlPanelUi();
+      logGuide(world.showFieldHeatmap ? "开启场热力图" : "关闭场热力图");
     },
     onReset: () => {
       void resetCurrentRun();
+    },
+    onPrint: () => {
+      printCurrentRecord();
     },
   });
 
