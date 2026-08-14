@@ -159,6 +159,10 @@ export function runSmoke(opts = {}) {
     encoding: "utf8",
     cwd: join(__dirname, ".."),
   });
+  const macroProc = spawnSync(process.execPath, [join(__dirname, "test-macro-ux-e7.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
 
   const checks = [
     ...result.checks,
@@ -166,6 +170,7 @@ export function runSmoke(opts = {}) {
     { id: "geneFluxCoupling", pass: (fluxProc.status ?? 1) === 0 },
     { id: "phenotypicDifferentiation", pass: (phenoProc.status ?? 1) === 0 },
     { id: "earthProfileCoordinates", pass: (profileProc.status ?? 1) === 0 },
+    { id: "macroUxEnvelope", pass: (macroProc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);

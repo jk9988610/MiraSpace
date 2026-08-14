@@ -1,5 +1,6 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
 import { updateVesicleBiomass } from "./gene-flux.js";
+import { archetypeMobility, chemotonArchetype, macroStyleForArchetype } from "./macro-visual.js";
 
 const MEMBRANE_COLOR = "rgba(120, 200, 255, 0.35)";
 const MEMBRANE_STROKE = "rgba(160, 220, 255, 0.75)";
@@ -325,6 +326,27 @@ export class Vesicle {
     }
     v.membraneEnergy -= this.cfg.maintenanceCost * 0.35 * dt;
     updateVesicleBiomass(v, this.cfg.radiusMax);
+    this._applyEarthProducerAnchor(v, fields);
+  }
+
+  /**
+   * E7: producers mobility 0 — soft anchor on land / biosphere band.
+   * @param {object} v
+   * @param {import('./fields.js').Fields} fields
+   */
+  _applyEarthProducerAnchor(v, fields) {
+    const profile = fields.earthProfile;
+    if (!profile || !v.chemoton) return;
+
+    const arch = chemotonArchetype(v.chemoton);
+    if (archetypeMobility(arch) > 0) return;
+
+    const zone = profile.zoneAt(v.y);
+    if (zone !== "land" && zone !== "biosphere") return;
+
+    const targetY = ((profile.oceanTop + profile.landTop) / 2) * this.worldHeight;
+    const dy = wrapDelta(targetY, v.y, this.worldHeight);
+    v.y = wrapCoord(v.y + dy * 0.06, this.worldHeight);
   }
 
   /**
@@ -468,13 +490,15 @@ export class Vesicle {
         ctx.beginPath();
         ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
         if (v.chemoton) {
-          const flux = v.chemoton.metabolicFlux;
-          ctx.fillStyle = `rgba(${80 + flux * 80}, ${160 + flux * 60}, 255, 0.32)`;
+          const arch = chemotonArchetype(v.chemoton);
+          const style = macroStyleForArchetype(arch);
+          ctx.fillStyle = style.fill;
+          ctx.strokeStyle = style.stroke;
         } else {
           ctx.fillStyle = MEMBRANE_COLOR;
+          ctx.strokeStyle = MEMBRANE_STROKE;
         }
         ctx.fill();
-        ctx.strokeStyle = MEMBRANE_STROKE;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 

@@ -15,6 +15,7 @@ import { createMilestoneToast } from "./milestone-toast.js";
 import { createMilestoneTracker } from "./milestone-tracker.js";
 import { buildSnapshotNarrative, buildSnapshotText } from "./data-export.js";
 import { createSnapshotModal } from "./snapshot-modal.js";
+import { createMagnifierModal } from "./magnifier-modal.js";
 import { createUiGuide, createSimObserver, particleLegendBroadcastLines } from "./ui-guide.js";
 import { createConditionsTree } from "./conditions-tree.js";
 import { createInitPicker } from "./init-picker.js";
@@ -52,6 +53,7 @@ function ensureDanmakuLayer() {
 const danmakuLayer = ensureDanmakuLayer();
 const uiGuidePanel = document.getElementById("ui-guide-panel");
 const snapshotModalContainer = document.getElementById("snapshot-modal");
+const magnifierModalContainer = document.getElementById("magnifier-modal");
 const conditionsTreeContainer = document.getElementById("conditions-tree");
 const hud = document.getElementById("hud");
 const hudStage = document.getElementById("hud-stage");
@@ -155,6 +157,8 @@ let simObserver = null;
 let initPicker = null;
 /** @type {ReturnType<typeof createSnapshotModal> | null} */
 let snapshotModal = null;
+let magnifierModal = null;
+let magnifierMode = false;
 /** @type {ReturnType<typeof createConditionsTree> | null} */
 let conditionsTree = null;
 let snapshotAutoPaused = false;
@@ -498,6 +502,8 @@ function syncControlPanelUi() {
     showGrid: world.showGrid,
     showField: world.showFieldHeatmap,
     fieldHeatmapMode: world.fieldHeatmapMode,
+    magnifierMode,
+    earthStage: !!world.earthProfile,
   });
 }
 
@@ -541,7 +547,7 @@ function renderWorld(w) {
   }
   if (w.vesicle && w.replicator) {
     if (w.colony) {
-      w.colony.drawLinks(ctx, camera, w.vesicle);
+      w.colony.drawEnvelope(ctx, camera, w.vesicle);
     }
     w.vesicle.draw(ctx, camera, w.replicator);
   }
@@ -663,6 +669,7 @@ async function main() {
         drive: "热力图：能量梯度驱动（单体被拉向亮区）",
         energy: "热力图：能量场浓度",
         waste: "热力图：废物场（越高阻力越大）",
+        light: "热力图：光照（剖面日照）",
         off: "热力图：关闭",
       };
       logGuide(labels[mode] ?? "热力图切换");
@@ -672,6 +679,12 @@ async function main() {
     },
     onSnapshot: () => {
       openSnapshot();
+    },
+    onMagnifierToggle: () => {
+      magnifierMode = !magnifierMode;
+      syncControlPanelUi();
+      logGuide(magnifierMode ? "放大镜：点击画布查看微观" : "放大镜：关闭");
+      if (!magnifierMode) magnifierModal?.close();
     },
   });
 
@@ -694,6 +707,25 @@ async function main() {
   });
 
   snapshotModal = createSnapshotModal(snapshotModalContainer);
+  magnifierModal = createMagnifierModal(magnifierModalContainer);
+
+  let magnifierPointer = { x: 0, y: 0, moved: false };
+  canvas.addEventListener("pointerdown", (e) => {
+    magnifierPointer = { x: e.clientX, y: e.clientY, moved: false };
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (Math.hypot(e.clientX - magnifierPointer.x, e.clientY - magnifierPointer.y) > 10) {
+      magnifierPointer.moved = true;
+    }
+  });
+  canvas.addEventListener("pointerup", (e) => {
+    if (!magnifierMode || magnifierPointer.moved || !world || !camera) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const { x: wx, y: wy } = camera.screenToWorld(sx, sy);
+    magnifierModal?.showAt(world, wx, wy);
+  });
 
   const deepLinkTab = parseStageFromUrl(params);
   if (deepLinkTab) {

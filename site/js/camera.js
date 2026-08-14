@@ -29,6 +29,11 @@ export class Camera {
     this.viewportH = Math.max(1, height);
   }
 
+  /** Screen pixels per world unit (alias for zoom). */
+  get scale() {
+    return this.zoom;
+  }
+
   /** @param {number} wx @param {number} wy */
   worldToScreen(wx, wy) {
     return {

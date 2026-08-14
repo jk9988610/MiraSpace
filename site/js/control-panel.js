@@ -9,7 +9,9 @@ import { TIME_SCALES, normalizeTimeScale } from "./sim-clock.js";
  *   onGridToggle: () => void,
  *   onFieldToggle: () => void,
  *   onReset: () => void,
+ *   onReset: () => void,
  *   onSnapshot: () => void,
+ *   onMagnifierToggle?: () => void,
  * }} handlers
  */
 export function createControlPanel(container, handlers) {
@@ -114,10 +116,20 @@ export function createControlPanel(container, handlers) {
   btnSnapshot.addEventListener("click", handlers.onSnapshot);
   rowTools.appendChild(btnSnapshot);
 
+  const btnMagnifier = document.createElement("button");
+  btnMagnifier.type = "button";
+  btnMagnifier.id = "btn-magnifier";
+  btnMagnifier.className = "control-panel__btn control-panel__btn--magnifier";
+  btnMagnifier.textContent = "放大镜";
+  btnMagnifier.title = "点击画布查看微观（不暂停）";
+  btnMagnifier.setAttribute("aria-pressed", "false");
+  btnMagnifier.addEventListener("click", () => handlers.onMagnifierToggle?.());
+  rowTools.appendChild(btnMagnifier);
+
   container.appendChild(rowTools);
 
   /**
-   * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean, fieldHeatmapMode?: string }} state
+   * @param {{ paused: boolean, timeScale: number, showGrid: boolean, showField: boolean, fieldHeatmapMode?: string, magnifierMode?: boolean, earthStage?: boolean }} state
    */
   function syncUi(state) {
     btnPause.textContent = state.paused ? "▶" : "⏸";
@@ -140,10 +152,18 @@ export function createControlPanel(container, handlers) {
       CO2: "热力·CO₂",
       O2: "热力·O₂",
       DOC: "热力·有机碳",
+      light: "热力·光照",
       off: "热力·关",
     };
     btnField.textContent = heatLabels[state.fieldHeatmapMode ?? "off"] ?? "热力";
     btnField.setAttribute("aria-pressed", String(state.showField));
+
+    const showMagnifier = state.earthStage ?? false;
+    btnMagnifier.hidden = !showMagnifier;
+    if (showMagnifier) {
+      btnMagnifier.classList.toggle("control-panel__btn--active", state.magnifierMode ?? false);
+      btnMagnifier.setAttribute("aria-pressed", String(state.magnifierMode ?? false));
+    }
   }
 
   syncUi({
@@ -154,5 +174,5 @@ export function createControlPanel(container, handlers) {
     fieldHeatmapMode: "drive",
   });
 
-  return { syncUi, btnPause, btnGrid, btnField, btnGuide, btnConditions };
+  return { syncUi, btnPause, btnGrid, btnField, btnGuide, btnConditions, btnMagnifier };
 }

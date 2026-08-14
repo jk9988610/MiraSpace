@@ -1,6 +1,12 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
 import { decodeSequence, computeEffectivePhenotype } from "./gene-expression.js";
 import { dominantInteriorSequence } from "./gene-flux.js";
+import {
+  archetypeMobility,
+  chemotonArchetype,
+  envelopeFromMembers,
+  macroStyleForArchetype,
+} from "./macro-visual.js";
 
 /**
  * Colony: persistent adhesion between chemoton vesicles after fission.
@@ -238,13 +244,18 @@ export class Colony {
         if (dist < 1e-6) continue;
 
         const pull = link.strength * (dist - rest) * 0.035 * dt;
+        const mobA = v.chemoton ? archetypeMobility(chemotonArchetype(v.chemoton)) : 1;
+        const mobB = other.chemoton ? archetypeMobility(chemotonArchetype(other.chemoton)) : 1;
+        const damp = Math.min(mobA, mobB);
+        const pullScale = damp <= 0 ? 0.1 : damp >= 1 ? 1 : 0.35 + damp * 0.65;
+        const effPull = pull * pullScale;
         const nx = dx / dist;
         const ny = dy / dist;
 
-        v.x = wrapCoord(v.x + nx * pull, this.worldWidth);
-        v.y = wrapCoord(v.y + ny * pull, this.worldHeight);
-        other.x = wrapCoord(other.x - nx * pull, this.worldWidth);
-        other.y = wrapCoord(other.y - ny * pull, this.worldHeight);
+        v.x = wrapCoord(v.x + nx * effPull, this.worldWidth);
+        v.y = wrapCoord(v.y + ny * effPull, this.worldHeight);
+        other.x = wrapCoord(other.x - nx * effPull, this.worldWidth);
+        other.y = wrapCoord(other.y - ny * effPull, this.worldHeight);
       }
     }
   }
@@ -499,32 +510,73 @@ export class Colony {
   }
 
   /**
+   * E7: colony envelope outline (no link lines). Physics links unchanged.
    * @param {CanvasRenderingContext2D} ctx
    * @param {import('./camera.js').Camera} camera
    * @param {import('./vesicle.js').Vesicle} vesicle
    */
-  drawLinks(ctx, camera, vesicle) {
-    const drawn = new Set();
-    for (const v of vesicle.list) {
-      if (!v.links?.length) continue;
-      for (const link of v.links) {
-        const key = [v.id, link.targetId].sort().join("|");
-        if (drawn.has(key)) continue;
-        drawn.add(key);
+  drawEnvelope(ctx, camera, vesicle) {
+    const minMembers = this.cfg.envelopeMinMembers ?? 3;
+    const bounds = camera.getViewBounds();
+    const margin = 64;
 
-        const other = vesicle.byId(link.targetId);
-        if (!other) continue;
+    for (const colony of this.list) {
+      const members = colony.memberVesicleIds
+        .map((id) => vesicle.byId(id))
+        .filter(Boolean);
+      if (members.length < minMembers) continue;
 
-        const a = camera.worldToScreen(v.x, v.y);
-        const b = camera.worldToScreen(other.x, other.y);
-        ctx.strokeStyle = `rgba(180, 240, 200, ${0.25 + link.strength * 0.55})`;
-        ctx.lineWidth = 1 + link.strength;
+      const envelope = envelopeFromMembers(members, this.worldWidth, this.worldHeight);
+      const style = macroStyleForArchetype(envelope.dominantArchetype);
+      const offsets = this._envelopeWrapOffsets(
+        envelope.cx,
+        envelope.cy,
+        envelope.radius,
+        bounds,
+        margin,
+      );
+
+      for (const [ox, oy] of offsets) {
+        const screen = camera.worldToScreen(envelope.cx + ox, envelope.cy + oy);
+        const r = envelope.radius * camera.scale;
         ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
+        ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
+        ctx.strokeStyle = style.envelope;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 5]);
         ctx.stroke();
+        ctx.setLineDash([]);
       }
     }
+  }
+
+  /**
+   * @param {number} x @param {number} y @param {number} radius
+   * @param {{ left: number, right: number, bottom: number, top: number }} bounds
+   * @param {number} margin
+   */
+  _envelopeWrapOffsets(x, y, radius, bounds, margin) {
+    const offsets = [[0, 0]];
+    const left = bounds.left - margin - radius;
+    const right = bounds.right + margin + radius;
+    const bottom = bounds.bottom - margin - radius;
+    const top = bounds.top + margin + radius;
+    const w = this.worldWidth;
+    const h = this.worldHeight;
+    if (x < left) offsets.push([w, 0]);
+    if (x > right) offsets.push([-w, 0]);
+    if (y < bottom) offsets.push([0, h]);
+    if (y > top) offsets.push([0, -h]);
+    return offsets;
+  }
+
+  /**
+   * @deprecated E7 — links kept for physics only; use drawEnvelope.
+   */
+  drawLinks(ctx, camera, vesicle) {
+    void ctx;
+    void camera;
+    void vesicle;
   }
 }
 

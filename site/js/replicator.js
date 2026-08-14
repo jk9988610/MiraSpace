@@ -1,4 +1,5 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
+import { chemotonArchetype, archetypeMobility } from "./macro-visual.js";
 import { randomNucleationSequence } from "./gene-expression.js";
 
 const STRAND_COLOR = "#c77dff";
@@ -159,13 +160,27 @@ export class Replicator {
       fields.consumeEnergy(strand.x, strand.y, uptake);
       strand.energy += uptake - this.cfg.maintenanceCost * dt * maintMult;
 
-      const noise = this.cfg.mobility * 0.25;
+      let mobility = this.cfg.mobility;
+      if (strand.vesicleId && vesicle) {
+        const host = vesicle.byId(strand.vesicleId);
+        if (host?.chemoton) {
+          mobility = archetypeMobility(chemotonArchetype(host.chemoton));
+        }
+      }
+
+      if (mobility <= 0) {
+        strand.vx = 0;
+        strand.vy = 0;
+        continue;
+      }
+
+      const noise = mobility * 0.25;
       strand.vx = (strand.vx + (rng.next() - 0.5) * noise * dt) * 0.98;
       strand.vy = (strand.vy + (rng.next() - 0.5) * noise * dt) * 0.98;
       const speed = Math.hypot(strand.vx, strand.vy);
-      if (speed > this.cfg.mobility) {
-        strand.vx = (strand.vx / speed) * this.cfg.mobility;
-        strand.vy = (strand.vy / speed) * this.cfg.mobility;
+      if (speed > mobility) {
+        strand.vx = (strand.vx / speed) * mobility;
+        strand.vy = (strand.vy / speed) * mobility;
       }
       strand.x = wrapCoord(strand.x + strand.vx * dt, this.worldWidth);
       strand.y = wrapCoord(strand.y + strand.vy * dt, this.worldHeight);
