@@ -3,6 +3,8 @@
  * Switch resets world (no cross-stage state); preserves seed; syncs URL.
  */
 
+import { STAGES } from "./biology-names.js";
+
 /** @typedef {{ id: string, preset: string, label: string, subtitle: string, hudStages: string[] }} StageTab */
 
 /** @type {StageTab[]} */
@@ -10,36 +12,36 @@ export const STAGE_TABS = [
   {
     id: "stage0",
     preset: "stage0-default",
-    label: "原始汤",
-    subtitle: "场与粒子，无遗传",
+    label: "前生物化学",
+    subtitle: "代谢场 · 酶 · 二聚体",
     hudStages: ["s1"],
   },
   {
     id: "stage2",
     preset: "stage2-default",
-    label: "复制子",
-    subtitle: "信息串复制与选择",
+    label: "遗传复制",
+    subtitle: "核酸样聚合物 · 自然选择",
     hudStages: ["s1", "s2"],
   },
   {
     id: "stage3",
     preset: "stage3-default",
     label: "原细胞",
-    subtitle: "膜泡包被与分裂",
+    subtitle: "细胞膜 · 胞质封装 · 分裂",
     hudStages: ["s1", "s2", "s3"],
   },
   {
     id: "stage4",
     preset: "stage4-default",
-    label: "化学子",
-    subtitle: "代谢·遗传·膜耦合",
+    label: "整合细胞",
+    subtitle: "代谢·膜·遗传耦合",
     hudStages: ["s1", "s2", "s3", "s4"],
   },
   {
     id: "stage5",
     preset: "stage5-default",
-    label: "多细胞",
-    subtitle: "群体连接与分工",
+    label: "多细胞生物",
+    subtitle: "细胞黏附 · 分工 · 发育",
     hudStages: ["s1", "s2", "s3", "s4", "s5"],
   },
 ];
@@ -108,12 +110,12 @@ export function applyHudVisibility(tab) {
   const stageLabel = document.getElementById("hud-stage");
   if (stageLabel) {
     const parts = [];
-    if (active.has("s1")) parts.push("S1");
-    if (active.has("s2")) parts.push("S2");
-    if (active.has("s3")) parts.push("S3");
-    if (active.has("s4")) parts.push("S4");
-    if (active.has("s5")) parts.push("S5");
-    stageLabel.textContent = parts.join("+") || "S1";
+    if (active.has("s1")) parts.push(STAGES.s1.zh);
+    if (active.has("s2")) parts.push(STAGES.s2.zh);
+    if (active.has("s3")) parts.push(STAGES.s3.zh);
+    if (active.has("s4")) parts.push(STAGES.s4.zh);
+    if (active.has("s5")) parts.push(STAGES.s5.zh);
+    stageLabel.textContent = parts.join(" · ") || STAGES.s1.zh;
   }
 }
 

@@ -2,6 +2,8 @@
  * Milestone condition definitions shared by tracker and tech-tree UI.
  */
 
+import { METRICS, STAGES } from "./biology-names.js";
+
 /** @typedef {'>=' | '<='} CompareOp */
 
 /**
@@ -21,9 +23,9 @@
 export const MILESTONE_CONDITIONS = [
   {
     id: "s1-cluster",
-    stage: "S1",
+    stage: STAGES.s1.zh,
     stageKey: "s1",
-    label: "clusterIndex",
+    label: METRICS.clusterIndex.zh,
     metricKey: "clusterAvg",
     getThreshold: (p) => p.metricsThresholds?.clusterIndex,
     compare: ">=",
@@ -31,9 +33,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s1-autocat",
-    stage: "S1",
+    stage: STAGES.s1.zh,
     stageKey: "s1",
-    label: "autocatalyticScore",
+    label: METRICS.autocatalyticScore.zh,
     metricKey: "autocatalyticAvg",
     getThreshold: (p) => p.metricsThresholds?.autocatalyticScore,
     compare: ">=",
@@ -41,9 +43,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s1-negentropy",
-    stage: "S1",
+    stage: STAGES.s1.zh,
     stageKey: "s1",
-    label: "negentropyFlux",
+    label: METRICS.negentropyFlux.zh,
     metricKey: "negentropyAvg",
     getThreshold: (p) => p.metricsThresholds?.negentropyFluxRatio,
     compare: ">=",
@@ -51,9 +53,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s2-heritability",
-    stage: "S2",
+    stage: STAGES.s2.zh,
     stageKey: "s2",
-    label: "heritability",
+    label: METRICS.heritability.zh,
     metricKey: "heritabilityAvg",
     getThreshold: (p) => p.metricsThresholdsS2?.heritability,
     compare: ">=",
@@ -61,9 +63,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s2-sweep",
-    stage: "S2",
+    stage: STAGES.s2.zh,
     stageKey: "s2",
-    label: "selectiveSweep",
+    label: METRICS.selectiveSweep.zh,
     metricKey: "selectiveSweepAvg",
     getThreshold: (p) => p.metricsThresholdsS2?.selectiveSweepTopShare,
     compare: ">=",
@@ -71,9 +73,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s2-info",
-    stage: "S2",
+    stage: STAGES.s2.zh,
     stageKey: "s2",
-    label: "informationAccumulation",
+    label: METRICS.informationAccumulation.zh,
     metricKey: "informationAccumulationAvg",
     getThreshold: (p) => p.metricsThresholdsS2?.informationAccumulationRatio,
     compare: ">=",
@@ -81,9 +83,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s3-encap",
-    stage: "S3",
+    stage: STAGES.s3.zh,
     stageKey: "s3",
-    label: "encapsulationGain",
+    label: METRICS.encapsulationGain.zh,
     metricKey: "encapsulationGainAvg",
     getThreshold: (p) => p.metricsThresholdsS3?.encapsulationGain,
     compare: ">=",
@@ -91,9 +93,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s3-fission",
-    stage: "S3",
+    stage: STAGES.s3.zh,
     stageKey: "s3",
-    label: "fissionEvents",
+    label: METRICS.fissionEvents.zh,
     metricKey: "fissionEvents",
     getThreshold: (p) => p.metricsThresholdsS3?.fissionEventsPer300s,
     compare: ">=",
@@ -101,9 +103,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s4-coherence",
-    stage: "S4",
+    stage: STAGES.s4.zh,
     stageKey: "s4",
-    label: "chemotonCoherence",
+    label: METRICS.chemotonCoherence.zh,
     metricKey: "chemotonCoherenceAvg",
     getThreshold: (p) => p.metricsThresholdsS4?.chemotonCoherence,
     compare: ">=",
@@ -111,9 +113,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s4-lineage",
-    stage: "S4",
+    stage: STAGES.s4.zh,
     stageKey: "s4",
-    label: "lineagePersistence",
+    label: METRICS.lineagePersistence.zh,
     metricKey: "lineagePersistenceAvg",
     getThreshold: (p) => p.metricsThresholdsS4?.lineagePersistenceGenerations,
     compare: ">=",
@@ -121,9 +123,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s5-persistence",
-    stage: "S5",
+    stage: STAGES.s5.zh,
     stageKey: "s5",
-    label: "multicellularPersistence",
+    label: METRICS.multicellularPersistence.zh,
     metricKey: "multicellularPersistenceAvg",
     getThreshold: (p) => p.metricsThresholdsS5?.multicellularPersistenceRatio,
     compare: ">=",
@@ -131,9 +133,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s5-labor",
-    stage: "S5",
+    stage: STAGES.s5.zh,
     stageKey: "s5",
-    label: "divisionOfLabor",
+    label: METRICS.divisionOfLabor.zh,
     metricKey: "divisionOfLaborAvg",
     getThreshold: (p) => p.metricsThresholdsS5?.divisionOfLaborColonyShare,
     compare: ">=",
@@ -141,9 +143,9 @@ export const MILESTONE_CONDITIONS = [
   },
   {
     id: "s5-pattern",
-    stage: "S5",
+    stage: STAGES.s5.zh,
     stageKey: "s5",
-    label: "developmentalPattern",
+    label: METRICS.developmentalPattern.zh,
     metricKey: "developmentalPatternAvg",
     getThreshold: (p) => p.metricsThresholdsS5?.developmentalPatternScore,
     compare: ">=",
@@ -153,11 +155,11 @@ export const MILESTONE_CONDITIONS = [
 
 /** @type {Record<string, { label: string, subtitle: string }>} */
 export const STAGE_TREE_META = {
-  s1: { label: "原始汤", subtitle: "场与粒子" },
-  s2: { label: "复制子", subtitle: "遗传复制" },
-  s3: { label: "原细胞", subtitle: "膜泡分裂" },
-  s4: { label: "化学子", subtitle: "代谢耦合" },
-  s5: { label: "多细胞", subtitle: "群体分工" },
+  s1: { label: "前生物化学", subtitle: "代谢场与酶促偶联" },
+  s2: { label: "遗传复制", subtitle: "核酸样聚合物" },
+  s3: { label: "原细胞", subtitle: "膜与胞质分裂" },
+  s4: { label: "整合细胞", subtitle: "代谢耦合" },
+  s5: { label: "多细胞生物", subtitle: "群体分工" },
 };
 
 /**

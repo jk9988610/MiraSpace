@@ -31,21 +31,21 @@
     },
     "maxCount": 4000,
     "monomer": {
-      "radius": 3,
+      "radius": 5,
       "mobility": 18,
       "energyBias": 0.6,
       "metabolismCost": 0.015,
       "wasteEmit": 0.008
     },
     "catalyst": {
-      "radius": 4,
+      "radius": 7,
       "mobility": 4,
       "metabolismCost": 0.008,
       "catalysisRadius": 28,
       "pairingRate": 0.35
     },
     "dimer": {
-      "radius": 5,
+      "radius": 8,
       "mobility": 10,
       "metabolismCost": 0.025,
       "dissociationRate": 0.04

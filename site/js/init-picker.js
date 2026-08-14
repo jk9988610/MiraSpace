@@ -30,6 +30,7 @@ export function createInitPicker(container, handlers) {
     btn.type = "button";
     btn.className = "init-picker__choice";
     btn.setAttribute("role", "listitem");
+    btn.setAttribute("aria-label", `${tab.label}：${tab.subtitle}`);
     btn.innerHTML = `
       <span class="init-picker__choice-label">${tab.label}</span>
       <span class="init-picker__choice-sub">${tab.subtitle}</span>
