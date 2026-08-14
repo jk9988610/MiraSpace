@@ -52,6 +52,17 @@ const sparkEncap = document.getElementById("spark-encap");
 const sparkParasiteLoad = document.getElementById("spark-parasite-load");
 const sparkFission = document.getElementById("spark-fission");
 const sparkVesicleCount = document.getElementById("spark-vesicle-count");
+const hudS4 = document.getElementById("hud-s4");
+const hudCoherence = document.getElementById("hud-coherence");
+const hudCoherenceAvg = document.getElementById("hud-coherence-avg");
+const hudLineage = document.getElementById("hud-lineage");
+const hudLineageAvg = document.getElementById("hud-lineage-avg");
+const hudStorage = document.getElementById("hud-storage");
+const hudChemotonCount = document.getElementById("hud-chemoton-count");
+const sparkCoherence = document.getElementById("spark-coherence");
+const sparkLineage = document.getElementById("spark-lineage");
+const sparkStorage = document.getElementById("spark-storage");
+const sparkChemotonCount = document.getElementById("spark-chemoton-count");
 const btnPause = document.getElementById("btn-pause");
 const btnGrid = document.getElementById("btn-grid");
 const btnField = document.getElementById("btn-field");
@@ -233,6 +244,35 @@ function updateHud(w) {
     });
     drawSparkline(sparkVesicleCount, w.metrics.getSparklineSeriesS3("vesicleCount"), {
       color: "#a0c4ff",
+    });
+  }
+
+  if (w.chemoton) {
+    hudS4.hidden = false;
+    hud.classList.add("hud--s4");
+    hudStage.textContent = "S1+S2+S3+S4";
+
+    const s4 = presetRef.metricsThresholdsS4;
+    hudCoherence.textContent = (m.chemotonCoherence ?? 0).toFixed(2);
+    hudCoherenceAvg.textContent = `avg ${(m.chemotonCoherenceAvg ?? 0).toFixed(2)}`;
+    hudLineage.textContent = (m.lineagePersistence ?? 0).toFixed(2);
+    hudLineageAvg.textContent = `avg ${(m.lineagePersistenceAvg ?? 0).toFixed(2)}`;
+    hudStorage.textContent = (m.storageFidelity ?? 1).toFixed(2);
+    hudChemotonCount.textContent = String(m.chemotonCount ?? 0);
+
+    drawSparkline(sparkCoherence, w.metrics.getSparklineSeriesS4("chemotonCoherence"), {
+      color: "#c9a0ff",
+      threshold: s4?.chemotonCoherence,
+    });
+    drawSparkline(sparkLineage, w.metrics.getSparklineSeriesS4("lineagePersistence"), {
+      color: "#ffd48a",
+      threshold: s4?.lineagePersistenceGenerations,
+    });
+    drawSparkline(sparkStorage, w.metrics.getSparklineSeriesS4("storageFidelity"), {
+      color: "#9effc8",
+    });
+    drawSparkline(sparkChemotonCount, w.metrics.getSparklineSeriesS4("chemotonCount"), {
+      color: "#88b4ff",
     });
   }
 }

@@ -10,8 +10,9 @@ export class Metrics {
    * @param {{ monomer: number, catalyst: number, dimer: number }} initialCounts
    * @param {import('./replicator.js').Replicator | null} [replicator]
    * @param {import('./vesicle.js').Vesicle | null} [vesicle]
+   * @param {import('./chemoton.js').Chemoton | null} [chemoton]
    */
-  constructor(preset, initialCounts, replicator = null, vesicle = null) {
+  constructor(preset, initialCounts, replicator = null, vesicle = null, chemoton = null) {
     this.preset = preset;
     this.thresholds = preset.metricsThresholds;
     this.updateEvery = this.thresholds.updateEveryTicks ?? 10;
@@ -62,6 +63,17 @@ export class Metrics {
     this.parasiteLoadAvg = 1;
     this._historyS3 = [];
     this._fissionLog = [];
+
+    this.s4Enabled = !!preset.chemoton;
+    this.chemoton = chemoton;
+    this.s4Thresholds = preset.metricsThresholdsS4 ?? null;
+    this.chemotonCoherence = 0;
+    this.lineagePersistence = 0;
+    this.storageFidelity = 1;
+    this.chemotonCount = 0;
+    this.chemotonCoherenceAvg = 0;
+    this.lineagePersistenceAvg = 0;
+    this._historyS4 = [];
   }
 
   /**
@@ -73,8 +85,9 @@ export class Metrics {
    * @param {object | null} replicatorEvents
    * @param {import('./vesicle.js').Vesicle | null} [vesicle]
    * @param {object | null} [vesicleEvents]
+   * @param {import('./chemoton.js').Chemoton | null} [chemoton]
    */
-  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null) {
+  record(tick, simTime, particles, particleEvents, replicator, replicatorEvents, vesicle = null, vesicleEvents = null, chemoton = null) {
     this._intervalDimersCreated += particleEvents.dimersCreated;
     this._intervalDimersNearCat += particleEvents.dimersCreatedNearCatalyst;
     this._intervalTicks += 1;
@@ -97,6 +110,10 @@ export class Metrics {
 
     if (this.s3Enabled && replicator && vesicle) {
       this._recordS3(simTime, replicator, vesicle, vesicleEvents);
+    }
+
+    if (this.s4Enabled && replicator && vesicle && chemoton) {
+      this._recordS4(simTime, replicator, vesicle, chemoton);
     }
 
     this._intervalDimersCreated = 0;
@@ -186,6 +203,11 @@ export class Metrics {
   /** @param {"encapsulationGain"|"parasiteLoad"|"fissionEvents"|"vesicleCount"} key */
   getSparklineSeriesS3(key) {
     return this._historyS3.map((row) => row[key]);
+  }
+
+  /** @param {"chemotonCoherence"|"lineagePersistence"|"storageFidelity"|"chemotonCount"} key */
+  getSparklineSeriesS4(key) {
+    return this._historyS4.map((row) => row[key]);
   }
 
   /** @param {{ monomer: number, catalyst: number, dimer: number }} counts */
@@ -360,6 +382,55 @@ export class Metrics {
     );
   }
 
+  /**
+   * @param {number} simTime
+   * @param {import('./replicator.js').Replicator} replicator
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {import('./chemoton.js').Chemoton} chemoton
+   */
+  _recordS4(simTime, replicator, vesicle, chemoton) {
+    const total = vesicle.count();
+    let coherent = 0;
+    for (const v of vesicle.list) {
+      if (chemoton.isCoherent(v)) coherent += 1;
+    }
+    this.chemotonCoherence = total > 0 ? coherent / total : 0;
+    this.chemotonCount = coherent;
+    this.lineagePersistence = chemoton.lineagePersistenceGenerations(vesicle);
+    this.storageFidelity = chemoton.storageFidelity(vesicle, replicator);
+
+    this._pushHistoryS4(simTime, {
+      chemotonCoherence: this.chemotonCoherence,
+      lineagePersistence: this.lineagePersistence,
+      storageFidelity: this.storageFidelity,
+      chemotonCount: this.chemotonCount,
+    });
+  }
+
+  _pushHistoryS4(simTime, sample) {
+    const sustainC = this.s4Thresholds?.sustainSeconds?.chemotonCoherence ?? 120;
+    const sustainL = this.s4Thresholds?.sustainSeconds?.lineagePersistence ?? 300;
+    this._historyS4.push({ t: simTime, ...sample });
+    const minTime = simTime - Math.max(sustainC, sustainL);
+    while (this._historyS4.length > 0 && this._historyS4[0].t < minTime) {
+      this._historyS4.shift();
+    }
+    while (this._historyS4.length > this.historyMaxSamples) {
+      this._historyS4.shift();
+    }
+
+    this.chemotonCoherenceAvg = this._averageHistorySince(
+      this._historyS4,
+      "chemotonCoherence",
+      simTime - sustainC,
+    );
+    this.lineagePersistenceAvg = this._averageHistorySince(
+      this._historyS4,
+      "lineagePersistence",
+      simTime - sustainL,
+    );
+  }
+
   /** @param {object[]} history @param {string} key */
   _averageHistory(history, key) {
     if (history.length === 0) return this[key] ?? 0;
@@ -399,7 +470,7 @@ export class Metrics {
       strandCount: this.replicator?.count() ?? 0,
     };
     if (!this.s3Enabled) return out;
-    return {
+    const s3out = {
       ...out,
       encapsulationGain: this.encapsulationGain,
       encapsulationGainAvg: this.encapsulationGainAvg,
@@ -408,6 +479,16 @@ export class Metrics {
       fissionEvents: this.fissionEvents,
       fissionEventsRate: this.fissionEventsRate,
       vesicleCount: this.vesicleCount,
+    };
+    if (!this.s4Enabled) return s3out;
+    return {
+      ...s3out,
+      chemotonCoherence: this.chemotonCoherence,
+      chemotonCoherenceAvg: this.chemotonCoherenceAvg,
+      lineagePersistence: this.lineagePersistence,
+      lineagePersistenceAvg: this.lineagePersistenceAvg,
+      storageFidelity: this.storageFidelity,
+      chemotonCount: this.chemotonCount,
     };
   }
 }

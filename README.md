@@ -1,6 +1,6 @@
 # MiraSpace
 
-米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**P0 + S1 + P2**（阶段 0）、**S2 达尔文阈值**（复制子）、**S3 个体化与原细胞**（vesicle）。
+米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**S4 整合细胞单元（chemoton）**。
 
 ## 在线访问
 
@@ -9,6 +9,7 @@ https://jk9988610.github.io/MiraSpace/
 - S1 默认：`?seed=42`
 - S2 复制子：`?seed=42&preset=stage2-default`
 - S3 原细胞：`?seed=42&preset=stage3-default`
+- S4 化学子：`?seed=42&preset=stage4-default`
 
 ## 本地运行
 
@@ -17,7 +18,7 @@ cd site
 python3 -m http.server 8080
 # S1: http://localhost:8080/?seed=42
 # S2: http://localhost:8080/?seed=42&preset=stage2-default
-# S3: http://localhost:8080/?seed=42&preset=stage3-default
+# S4: http://localhost:8080/?seed=42&preset=stage4-default
 ```
 
 ## 功能
@@ -29,6 +30,7 @@ python3 -m http.server 8080
 | **P2** | `?seed=` 复现、60 s sparkline、场/粒子性能裁剪 |
 | **S2** | strand 复制子（成核/模板复制/突变）、四项 S2 指标 HUD |
 | **S3** | vesicle 膜（成核/吞入/生长/分裂）、四项 S3 指标 HUD；裸 strand 仍复制 |
+| **S4** | chemoton 三子耦合（代谢/遗传/膜）、fitness 门控分裂、四项 S4 指标 HUD |
 
 ## S1 指标
 
@@ -52,14 +54,25 @@ python3 -m http.server 8080
 
 门槛见 `site/data/presets/stage3-default.json` 中 `metricsThresholdsS3`。
 
-### S2 vs S3 对照
+## S4 指标
 
-| 机制 | S2 | S3 |
+- `chemotonCoherence` — 三子同时高于阈的 vesicle 占比
+- `lineagePersistence` — 膜谱系平均存活代数
+- `storageFidelity` — redundant 存储模式保真（观测）
+- `chemotonCount` — 满足 coherence 的 vesicle 数（观测）
+
+门槛见 `site/data/presets/stage4-default.json` 中 `metricsThresholdsS4`。
+
+> S3 结案门 sustained 达标：维护者跑 `--acceptance`，README 标「S3 结案待定」。
+
+### S3 vs S4 对照
+
+| 机制 | S3 | S4 |
 |------|----|----|
-| 裸 strand 复制 | ✓ | ✓（共存，不关闭） |
-| vesicle 膜 | — | 成核 / 吞入 / 生长 / 分裂 |
-| 脚本 spawn 细胞 | 禁止 | 禁止 |
-| 主要涌现指标 | 遗传/选择/信息 | 包被增益 / 寄生负载 / 分裂 |
+| vesicle 分裂 | 半径 + 能量 | + **chemotonFitness** + coherenceTicks |
+| 膜内复制 | S2 机制 | × metabolicFlux × membraneHealth |
+| 存储升级 | — | 涌现 `storageMode: redundant` |
+| 裸 strand | ✓ 共存 | ✓ 共存 |
 
 ### 示例运行（stage2-default，seed=42，600 sim s）
 
@@ -113,6 +126,7 @@ node scripts/s3-headless-test.mjs --acceptance
 - `?seed=42` — 复现随机初始化
 - `?preset=stage2-default` — 加载 S2 preset（支持 `extends` 合并）
 - `?preset=stage3-default` — 加载 S3 preset（extends stage2）
+- `?preset=stage4-default` — 加载 S4 preset（extends stage3，chemoton 耦合）
 
 ## 约束
 
@@ -127,6 +141,7 @@ site/
 ├── js/
 │   ├── replicator.js      # S2 strand
 │   ├── vesicle.js         # S3 膜 compartment
+│   ├── chemoton.js        # S4 三子耦合
 │   ├── preset.js
 │   └── ...
 └── data/presets/
@@ -134,9 +149,11 @@ site/
     ├── stage2-default.json
     ├── stage2-error-threshold.json
     └── stage3-default.json
+    └── stage4-default.json
 scripts/
-├── run-suite.mjs          # 统一入口 --smoke | --acceptance
-├── smoke-test.mjs         # Smoke 层（AI 默认）
+├── run-suite.mjs
+├── smoke-test.mjs
+├── s4-headless-test.mjs
 ├── test-report.mjs        # Markdown 报告
 ├── test-utils.mjs
 ├── s1-headless-test.mjs
@@ -148,6 +165,7 @@ scripts/
 ## 文档（Talk）
 
 - [测试分层与报告规范](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-测试分层与报告规范.md)
+- [S4 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S4-整合细胞单元.md)
 - [S3 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S3-个体化与原细胞.md)
 - [S2 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S2-达尔文阈值.md)
 - [科学阶段路线图](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-科学阶段路线图.md)

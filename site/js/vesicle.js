@@ -13,9 +13,11 @@ export class Vesicle {
    * @param {number} worldWidth
    * @param {number} worldHeight
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {import('./chemoton.js').Chemoton | null} [chemoton]
    */
-  constructor(preset, worldWidth, worldHeight, rng) {
+  constructor(preset, worldWidth, worldHeight, rng, chemoton = null) {
     this.cfg = preset.vesicle;
+    this.chemoton = chemoton;
     this.worldWidth = worldWidth;
     this.worldHeight = worldHeight;
     this.list = [];
@@ -50,8 +52,10 @@ export class Vesicle {
    * @param {import('./particles.js').Particles} particles
    * @param {import('./replicator.js').Replicator} replicator
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {number} simTime
+   * @param {object | null} [replicatorEvents]
    */
-  step(dt, fields, particles, replicator, rng) {
+  step(dt, fields, particles, replicator, rng, simTime, replicatorEvents = null) {
     const events = {
       nucleations: 0,
       captures: 0,
@@ -60,7 +64,7 @@ export class Vesicle {
       fissionEvents: 0,
     };
 
-    this._tryNucleation(fields, particles, replicator, rng, events);
+    this._tryNucleation(fields, particles, replicator, rng, events, simTime);
     this._updateCapture(replicator, dt, events);
     this._constrainInteriorStrands(replicator);
 
@@ -68,11 +72,17 @@ export class Vesicle {
     for (const v of this.list) {
       v.age += 1;
       this._maintainAndGrow(v, dt, fields, particles);
+      if (this.chemoton) {
+        this.chemoton.updateGeneticAndCoherence(v, replicator, simTime, dt);
+        if (replicatorEvents?.replications && v.interior.size > 0) {
+          void replicatorEvents;
+        }
+      }
       if (v._pendingLysis) {
         toRemove.push(v.id);
         continue;
       }
-      this._tryFission(v, replicator, rng, events);
+      this._tryFission(v, replicator, rng, events, simTime);
     }
 
     for (const id of toRemove) {
@@ -88,8 +98,9 @@ export class Vesicle {
    * @param {import('./replicator.js').Replicator} replicator
    * @param {ReturnType<import('./camera.js').createRng>} rng
    * @param {{ nucleations: number }} events
+   * @param {number} simTime
    */
-  _tryNucleation(fields, particles, replicator, rng, events) {
+  _tryNucleation(fields, particles, replicator, rng, events, simTime) {
     if (this.list.length >= this.cfg.maxCount) return;
 
     const energyMin = this.cfg.nucleationEnergyMin ?? 0.32;
@@ -112,7 +123,7 @@ export class Vesicle {
       if (rng.next() >= rate) continue;
       if (fields.sampleEnergy(cat.x, cat.y) < energyMin) continue;
 
-      const v = this._createVesicle(cat.x, cat.y, this.cfg.radius0, rng);
+      const v = this._createVesicle(cat.x, cat.y, this.cfg.radius0, rng, simTime);
       this._primeCaptureNear(v, replicator);
       this.list.push(v);
       events.nucleations += 1;
@@ -150,15 +161,16 @@ export class Vesicle {
    * @param {number} y
    * @param {number} radius
    * @param {ReturnType<import('./camera.js').createRng>} rng
+   * @param {number} [simTime]
    */
-  _createVesicle(x, y, radius, rng) {
+  _createVesicle(x, y, radius, rng, simTime = 0) {
     const id = this._nextId;
     this._nextId += 1;
     const lineageId = this._nextLineageId;
     this._nextLineageId += 1;
     const compartmentId = this._nextCompartmentId;
     this._nextCompartmentId += 1;
-    return {
+    const v = {
       id: `vesicle-${id}`,
       x: wrapCoord(x, this.worldWidth),
       y: wrapCoord(y, this.worldHeight),
@@ -170,6 +182,11 @@ export class Vesicle {
       interior: new Set(),
       localPool: 0,
     };
+    if (this.chemoton) {
+      v.chemoton = this.chemoton.createState(rng);
+      this.chemoton.registerBirth(v, simTime);
+    }
+    return v;
   }
 
   /**
@@ -273,7 +290,12 @@ export class Vesicle {
 
     v.membraneEnergy -= this.cfg.maintenanceCost * dt;
 
-    if (v.membraneEnergy <= 0) {
+    if (this.chemoton) {
+      if (v.chemoton?.membraneHealth <= 0) {
+        v._pendingLysis = true;
+        return;
+      }
+    } else if (v.membraneEnergy <= 0) {
       v._pendingLysis = true;
       return;
     }
@@ -311,10 +333,13 @@ export class Vesicle {
    * @param {import('./replicator.js').Replicator} replicator
    * @param {ReturnType<import('./camera.js').createRng>} rng
    * @param {{ fissions: number, fissionEvents: number }} events
+   * @param {number} simTime
    */
-  _tryFission(v, replicator, rng, events) {
+  _tryFission(v, replicator, rng, events, simTime) {
     const threshold = (this.cfg.fissionThresholdRatio ?? 0.9) * this.cfg.radiusMax;
     if (v.radius < threshold) return;
+
+    if (this.chemoton && !this.chemoton.canFission(v, threshold)) return;
 
     if (v.membraneEnergy < this.cfg.maintenanceCost * 8) {
       v._pendingLysis = true;
@@ -334,17 +359,24 @@ export class Vesicle {
       wrapCoord(v.y - oy, this.worldHeight),
       newRadius,
       rng,
+      simTime,
     );
     const childB = this._createVesicle(
       wrapCoord(v.x + ox, this.worldWidth),
       wrapCoord(v.y + oy, this.worldHeight),
       newRadius,
       rng,
+      simTime,
     );
     childA.lineageId = v.lineageId;
     childB.lineageId = v.lineageId;
     childA.membraneEnergy = v.membraneEnergy * 0.45;
     childB.membraneEnergy = v.membraneEnergy * 0.45;
+
+    if (this.chemoton && v.chemoton) {
+      childA.chemoton = this.chemoton.inheritState(v, rng);
+      childB.chemoton = this.chemoton.inheritState(v, rng);
+    }
 
     const interiorIds = [...v.interior];
     for (const sid of interiorIds) {
@@ -377,6 +409,10 @@ export class Vesicle {
   _lysis(v, replicator, events) {
     if (!v) return;
 
+    if (this.chemoton) {
+      this.chemoton.registerDeath(v, v.age);
+    }
+
     for (const sid of v.interior) {
       const strand = replicator.list.find((s) => s.id === sid);
       if (strand) {
@@ -406,7 +442,12 @@ export class Vesicle {
 
         ctx.beginPath();
         ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = MEMBRANE_COLOR;
+        if (v.chemoton) {
+          const flux = v.chemoton.metabolicFlux;
+          ctx.fillStyle = `rgba(${80 + flux * 80}, ${160 + flux * 60}, 255, 0.32)`;
+        } else {
+          ctx.fillStyle = MEMBRANE_COLOR;
+        }
         ctx.fill();
         ctx.strokeStyle = MEMBRANE_STROKE;
         ctx.lineWidth = 1.5;

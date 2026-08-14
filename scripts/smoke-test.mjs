@@ -8,7 +8,7 @@ import { runSimSeconds, timed } from "./test-utils.mjs";
 import { buildReport } from "./test-report.mjs";
 
 const SEED = 42;
-const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45 };
+const SIM_BY_STAGE = { stage0: 15, stage2: 45, stage3: 45, stage4: 45 };
 
 /**
  * @param {{ preset?: string }} [opts]
@@ -18,6 +18,7 @@ export function runSmoke(opts = {}) {
     stage0: loadPresetSync("stage0-default"),
     stage2: loadPresetSync("stage2-default"),
     stage3: loadPresetSync("stage3-default"),
+    stage4: loadPresetSync("stage4-default"),
   };
 
   const filter = opts.preset?.replace(/\.json$/, "");
@@ -26,6 +27,7 @@ export function runSmoke(opts = {}) {
     if (filter === "stage0-default") return key === "stage0";
     if (filter === "stage2-default") return key === "stage2";
     if (filter === "stage3-default") return key === "stage3";
+    if (filter === "stage4-default") return key === "stage4";
     return key === filter.replace("-default", "");
   });
 
@@ -61,6 +63,19 @@ export function runSmoke(opts = {}) {
         metrics.vesicleCount = vesicles;
         metrics.interiorStrands = interior;
       }
+
+      if (stageKey === "stage4") {
+        const vesicles = w.vesicle?.count() ?? 0;
+        const hasChemoton = w.vesicle?.list.some((v) => v.chemoton) ?? false;
+        const pass = vesicles > 0 && hasChemoton;
+        checks.push({ id: "chemotonActive", pass });
+        checks.push({
+          id: "fissionFitnessGate",
+          pass: testFissionFitnessGate(w),
+        });
+        metrics.chemotonCoherence = Number((w.metrics.chemotonCoherence ?? 0).toFixed(3));
+        metrics.vesicleCount = vesicles;
+      }
     }
 
     return { checks, metrics };
@@ -68,7 +83,7 @@ export function runSmoke(opts = {}) {
 
   const checks = [
     ...result.checks,
-    { id: "wallClockUnder5s", pass: wallMs <= 5000 },
+    { id: "wallClockUnder8s", pass: wallMs <= 8000 },
   ];
   const allPass = checks.every((c) => c.pass);
 
@@ -82,6 +97,33 @@ export function runSmoke(opts = {}) {
     metrics: result.metrics,
     allPass,
   });
+}
+
+/** @param {import('../site/js/world.js').World} world */
+function testFissionFitnessGate(world) {
+  if (!world.chemoton) return true;
+  const threshold = (world.preset.vesicle.fissionThresholdRatio ?? 0.62)
+    * world.preset.vesicle.radiusMax;
+  const low = {
+    radius: threshold + 1,
+    chemoton: {
+      metabolicFlux: 0.1,
+      membraneHealth: 0.1,
+      geneticActivity: 0.1,
+      coherenceTicks: 0,
+    },
+  };
+  const high = {
+    radius: threshold + 1,
+    chemoton: {
+      metabolicFlux: 0.8,
+      membraneHealth: 0.8,
+      geneticActivity: 0.8,
+      coherenceTicks: 200,
+    },
+  };
+  return !world.chemoton.canFission(low, threshold)
+    && world.chemoton.canFission(high, threshold);
 }
 
 const isMain = process.argv[1]?.includes("smoke-test.mjs");
