@@ -79,7 +79,7 @@ const STATIC_GUIDE_HTML = `
     <li><strong>顶栏 Tab</strong>：切换 preset，保留 seed，重置世界。</li>
     <li><strong>右下控制</strong>：暂停、倍率、网格、场、重置、说明、条件、快照。</li>
     <li><strong>里程碑弹幕</strong>：达成门槛时自左向右飞过画布，不打断操作。</li>
-    <li><strong>Canvas</strong>：单指平移；双指缩放未启用，靠平移观察。</li>
+    <li><strong>Canvas</strong>：单指平移可绕世界一圈（周期边界，无固定原点）；热力按钮循环 驱动/能量/废物/关。</li>
   </ul>
 </section>
 ${PARTICLE_LEGEND_HTML}
