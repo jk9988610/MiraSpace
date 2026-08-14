@@ -39,6 +39,19 @@ const sparkHeritability = document.getElementById("spark-heritability");
 const sparkSweep = document.getElementById("spark-sweep");
 const sparkInfo = document.getElementById("spark-info");
 const sparkParasite = document.getElementById("spark-parasite");
+const hudS3 = document.getElementById("hud-s3");
+const hudRowVesicles = document.getElementById("hud-row-vesicles");
+const hudVesicles = document.getElementById("hud-vesicles");
+const hudVesicleMetric = document.getElementById("hud-vesicle-metric");
+const hudEncap = document.getElementById("hud-encap");
+const hudEncapAvg = document.getElementById("hud-encap-avg");
+const hudParasiteLoad = document.getElementById("hud-parasite-load");
+const hudParasiteLoadAvg = document.getElementById("hud-parasite-load-avg");
+const hudFission = document.getElementById("hud-fission");
+const sparkEncap = document.getElementById("spark-encap");
+const sparkParasiteLoad = document.getElementById("spark-parasite-load");
+const sparkFission = document.getElementById("spark-fission");
+const sparkVesicleCount = document.getElementById("spark-vesicle-count");
 const btnPause = document.getElementById("btn-pause");
 const btnGrid = document.getElementById("btn-grid");
 const btnField = document.getElementById("btn-field");
@@ -190,6 +203,38 @@ function updateHud(w) {
       color: "#ff6b8a",
     });
   }
+
+  if (w.vesicle) {
+    hudS3.hidden = false;
+    hudRowVesicles.hidden = false;
+    hud.classList.add("hud--s3");
+    hudStage.textContent = "S1+S2+S3";
+
+    const s3 = presetRef.metricsThresholdsS3;
+    hudVesicles.textContent = String(m.vesicleCount ?? 0);
+    if (hudVesicleMetric) hudVesicleMetric.textContent = String(m.vesicleCount ?? 0);
+    hudEncap.textContent = (m.encapsulationGain ?? 1).toFixed(2);
+    hudEncapAvg.textContent = `avg ${(m.encapsulationGainAvg ?? 1).toFixed(2)}`;
+    hudParasiteLoad.textContent = (m.parasiteLoad ?? 1).toFixed(2);
+    hudParasiteLoadAvg.textContent = `avg ${(m.parasiteLoadAvg ?? 1).toFixed(2)}`;
+    hudFission.textContent = String(m.fissionEvents ?? 0);
+
+    drawSparkline(sparkEncap, w.metrics.getSparklineSeriesS3("encapsulationGain"), {
+      color: "#7ec8ff",
+      threshold: s3?.encapsulationGain,
+    });
+    drawSparkline(sparkParasiteLoad, w.metrics.getSparklineSeriesS3("parasiteLoad"), {
+      color: "#ffb07a",
+      threshold: s3?.parasiteLoadMax,
+    });
+    drawSparkline(sparkFission, w.metrics.getSparklineSeriesS3("fissionEvents"), {
+      color: "#b8ff9a",
+      threshold: s3?.fissionEventsPer300s,
+    });
+    drawSparkline(sparkVesicleCount, w.metrics.getSparklineSeriesS3("vesicleCount"), {
+      color: "#a0c4ff",
+    });
+  }
 }
 
 function frame(now) {
@@ -213,6 +258,9 @@ function frame(now) {
   world.particles.draw(ctx, camera);
   if (world.replicator) {
     world.replicator.draw(ctx, camera);
+  }
+  if (world.vesicle && world.replicator) {
+    world.vesicle.draw(ctx, camera, world.replicator);
   }
   updateHud(world);
 }

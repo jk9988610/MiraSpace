@@ -124,7 +124,7 @@ export class Replicator {
 
       const length = this.cfg.L0Min + rng.int(this.cfg.L0Max - this.cfg.L0Min + 1);
       const sequence = this._randomSequence(length, rng);
-      this.list.push(this._createStrand(sequence, cat.x, cat.y, rng, null));
+      this.list.push(this._createStrand(sequence, cat.x, cat.y, rng, null, null));
       this._L0Sum += length;
       this._L0Count += 1;
       events.nucleations += 1;
@@ -183,6 +183,7 @@ export class Replicator {
       wrapCoord(parent.y + (rng.next() - 0.5) * offset, this.worldHeight),
       rng,
       parent.lineageId,
+      parent.vesicleId ?? null,
     );
     child.energy = parent.energy * 0.45;
     this.list.push(child);
@@ -285,8 +286,9 @@ export class Replicator {
    * @param {number} y
    * @param {ReturnType<import('./camera.js').createRng>} rng
    * @param {number|null} lineageId
+   * @param {string|null} [vesicleId]
    */
-  _createStrand(sequence, x, y, rng, lineageId) {
+  _createStrand(sequence, x, y, rng, lineageId, vesicleId = null) {
     const angle = rng.range(0, Math.PI * 2);
     const speed = this.cfg.mobility * 0.4;
     const id = this._nextId;
@@ -304,6 +306,7 @@ export class Replicator {
       lineageId: lineage,
       replicationSuccesses: 0,
       replicationAttempts: 0,
+      vesicleId,
     };
   }
 
@@ -325,6 +328,7 @@ export class Replicator {
     const top = bounds.top + margin;
 
     for (const s of this.list) {
+      if (s.vesicleId) continue;
       if (!this._isVisibleWrapped(s.x, s.y, left, right, bottom, top)) continue;
       const copies = this._wrapOffsets(s.x, s.y, left, right, bottom, top);
       const hue = (s.lineageId * 47) % 360;

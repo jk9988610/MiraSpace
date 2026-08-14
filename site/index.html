@@ -12,7 +12,7 @@
     <div class="portrait-overlay__content">
       <h1>MiraSpace</h1>
       <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
-      <p class="portrait-overlay__hint">米拉空间 · S1 / S2</p>
+      <p class="portrait-overlay__hint">米拉空间 · S1 / S2 / S3</p>
     </div>
   </div>
 
@@ -42,6 +42,10 @@
     <div class="hud__row">
       <span>粒子</span>
       <strong id="hud-particles">0</strong>
+    </div>
+    <div class="hud__row hud__row--s3" id="hud-row-vesicles" hidden>
+      <span>Vesicle</span>
+      <strong id="hud-vesicles">0</strong>
     </div>
     <div class="hud__row hud__row--s2" id="hud-row-strands" hidden>
       <span>Strand</span>
@@ -93,6 +97,34 @@
         <span id="hud-parasite" class="hud__metric-value">—</span>
         <span class="hud__metric-avg">观测</span>
         <canvas id="spark-parasite" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+    </div>
+    <div id="hud-s3" hidden>
+      <hr class="hud__divider">
+      <p class="hud__section">S3</p>
+      <div class="hud__metric">
+        <span class="hud__metric-label">encapsulationGain</span>
+        <span id="hud-encap" class="hud__metric-value">—</span>
+        <span id="hud-encap-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-encap" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">parasiteLoad</span>
+        <span id="hud-parasite-load" class="hud__metric-value">—</span>
+        <span id="hud-parasite-load-avg" class="hud__metric-avg">avg —</span>
+        <canvas id="spark-parasite-load" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">fissionEvents</span>
+        <span id="hud-fission" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">300 s 窗</span>
+        <canvas id="spark-fission" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
+      </div>
+      <div class="hud__metric">
+        <span class="hud__metric-label">vesicleCount</span>
+        <span id="hud-vesicle-metric" class="hud__metric-value">—</span>
+        <span class="hud__metric-avg">观测</span>
+        <canvas id="spark-vesicle-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
     <div class="hud__controls">

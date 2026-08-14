@@ -1,0 +1,32 @@
+{
+  "extends": "stage2-default.json",
+  "replicator": {
+    "mobility": 22
+  },
+  "vesicle": {
+    "nucleationRate": 0.00006,
+    "nucleationEnergyMin": 0.28,
+    "nucleationStrandRadius": 128,
+    "nucleationStrandBoost": 16,
+    "radius0": 12,
+    "radiusMax": 48,
+    "growthRate": 0.24,
+    "maintenanceCost": 0.004,
+    "permeability": 0.3,
+    "fissionThresholdRatio": 0.62,
+    "captureTicks": 4,
+    "captureMargin": 2,
+    "monomerSearchRadius": 32,
+    "maxCount": 120
+  },
+  "metricsThresholdsS3": {
+    "encapsulationGain": 1.8,
+    "parasiteLoadMax": 0.55,
+    "fissionEventsPer300s": 3,
+    "sustainSeconds": {
+      "encapsulationGain": 60,
+      "parasiteLoad": 120,
+      "fissionEvents": 300
+    }
+  }
+}
