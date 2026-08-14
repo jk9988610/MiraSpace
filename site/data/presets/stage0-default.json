@@ -1,0 +1,65 @@
+{
+  "world": {
+    "width": 4096,
+    "height": 2048,
+    "boundary": "wrap"
+  },
+  "sim": {
+    "dt": 0.033333,
+    "maxSubsteps": 4,
+    "seed": 42
+  },
+  "fields": {
+    "width": 256,
+    "height": 128,
+    "energy": {
+      "diffusion": 0.4,
+      "replenish": 0.02,
+      "baseline": 0.5
+    },
+    "waste": {
+      "diffusion": 0.2,
+      "decay": 0.05
+    },
+    "heatmapOpacity": 0.35
+  },
+  "particles": {
+    "counts": {
+      "monomer": 600,
+      "catalyst": 40,
+      "dimer": 0
+    },
+    "maxCount": 4000,
+    "monomer": {
+      "radius": 3,
+      "mobility": 18,
+      "energyBias": 0.6,
+      "metabolismCost": 0.015,
+      "wasteEmit": 0.008
+    },
+    "catalyst": {
+      "radius": 4,
+      "mobility": 4,
+      "metabolismCost": 0.008,
+      "catalysisRadius": 28,
+      "pairingRate": 0.35
+    },
+    "dimer": {
+      "radius": 5,
+      "mobility": 10,
+      "metabolismCost": 0.025,
+      "dissociationRate": 0.04
+    }
+  },
+  "metricsThresholds": {
+    "clusterIndex": 1.8,
+    "autocatalyticScore": 1.2,
+    "negentropyFluxRatio": 1.3,
+    "sustainSeconds": 60,
+    "updateEveryTicks": 10
+  },
+  "render": {
+    "showGrid": true,
+    "gridStep": 128
+  }
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="MiraSpace — 米拉空间数字生命演化模拟（P0 观察基底 + S1 前生物底物）">
+  <title>MiraSpace · 米拉空间</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="portrait-overlay" class="portrait-overlay" hidden>
+    <div class="portrait-overlay__content">
+      <h1>MiraSpace</h1>
+      <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
+      <p class="portrait-overlay__hint">米拉空间 · 阶段 0（P0 + S1）</p>
+    </div>
+  </div>
+
+  <canvas id="world-canvas" aria-label="MiraSpace 模拟画布"></canvas>
+
+  <aside id="hud" class="hud" aria-live="polite">
+    <header class="hud__header">
+      <span class="hud__title">MiraSpace</span>
+      <span class="hud__stage">P0 + S1</span>
+    </header>
+    <div class="hud__row">
+      <span>Tick</span>
+      <strong id="hud-tick">0</strong>
+    </div>
+    <div class="hud__row">
+      <span>时间</span>
+      <strong id="hud-time">0.0 s</strong>
+    </div>
+    <div class="hud__row">
+      <span>粒子</span>
+      <strong id="hud-particles">0</strong>
+    </div>
+    <hr class="hud__divider">
+    <div class="hud__metric">
+      <span class="hud__metric-label">clusterIndex</span>
+      <span id="hud-cluster" class="hud__metric-value">—</span>
+      <span id="hud-cluster-avg" class="hud__metric-avg">avg —</span>
+    </div>
+    <div class="hud__metric">
+      <span class="hud__metric-label">autocatalyticScore</span>
+      <span id="hud-autocat" class="hud__metric-value">—</span>
+      <span id="hud-autocat-avg" class="hud__metric-avg">avg —</span>
+    </div>
+    <div class="hud__metric">
+      <span class="hud__metric-label">negentropyFlux</span>
+      <span id="hud-negentropy" class="hud__metric-value">—</span>
+      <span id="hud-negentropy-avg" class="hud__metric-avg">avg —</span>
+    </div>
+    <div class="hud__controls">
+      <button id="btn-pause" type="button" aria-pressed="false">暂停</button>
+      <button id="btn-grid" type="button" aria-pressed="true">网格</button>
+      <button id="btn-field" type="button" aria-pressed="true">场</button>
+    </div>
+    <p class="hud__help">单指拖动平移 · 无缩放</p>
+  </aside>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
