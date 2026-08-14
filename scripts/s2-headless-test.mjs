@@ -1,26 +1,16 @@
 #!/usr/bin/env node
 /**
- * S2 headless validation: nucleation, heritability, error threshold, long run.
- * Run: node scripts/s2-headless-test.mjs
+ * S2 headless validation.
+ * Full acceptance: node scripts/s2-headless-test.mjs --acceptance
+ * Quick (60 sim s): node scripts/s2-headless-test.mjs
+ * AI default: node scripts/run-suite.mjs --smoke
  */
 import { World } from "../site/js/world.js";
 import { loadPresetSync } from "./preset-loader.mjs";
+import { runSimSeconds } from "./test-utils.mjs";
 
 const stage2 = loadPresetSync("stage2-default");
 const stage2HighMu = loadPresetSync("stage2-error-threshold");
-
-function runTicks(world, n) {
-  for (let i = 0; i < n; i += 1) {
-    world.tick();
-  }
-}
-
-function runSimSeconds(preset, seed, seconds) {
-  const world = new World(preset, seed);
-  const ticks = Math.floor(seconds / world.dt);
-  runTicks(world, ticks);
-  return world;
-}
 
 function testNoScriptSpawn() {
   const w = new World(stage2, 42);
@@ -32,11 +22,11 @@ function testNoScriptSpawn() {
   };
 }
 
-function testEmergentNucleation() {
-  const w = runSimSeconds(stage2, 42, 300);
+function testEmergentNucleation(seconds) {
+  const w = runSimSeconds(stage2, 42, seconds);
   const pass = w.replicator.count() > 0;
   return {
-    name: "emergent nucleation within 300 sim s",
+    name: `emergent nucleation within ${seconds} sim s`,
     pass,
     detail: `${w.replicator.count()} strands`,
   };
@@ -109,31 +99,33 @@ function testLongRun600s() {
   };
 }
 
-function testS1RegressionHint() {
+export function runAcceptance() {
+  const tests = [
+    testNoScriptSpawn(),
+    testEmergentNucleation(300),
+    testHeritability(),
+    testErrorThresholdContrast(),
+    testLongRun600s(),
+  ];
+  const allPass = tests.every((t) => t.pass);
+  const errorContrast = tests.find((t) => t.name.startsWith("error threshold"));
   return {
-    name: "S1 regression (run s1-headless-test.mjs separately)",
-    pass: true,
-    detail: "required exit 0 on stage0-default",
+    allPass,
+    tests,
+    errorThresholdContrast: errorContrast?.detail,
+    exampleMetrics: tests.find((t) => t.name.startsWith("600 sim"))?.detail?.metrics,
   };
 }
 
-const tests = [
-  testNoScriptSpawn(),
-  testEmergentNucleation(),
-  testHeritability(),
-  testErrorThresholdContrast(),
-  testLongRun600s(),
-  testS1RegressionHint(),
-];
+export function runQuick() {
+  const tests = [
+    testNoScriptSpawn(),
+    testEmergentNucleation(60),
+  ];
+  return { allPass: tests.every((t) => t.pass), tests, mode: "quick" };
+}
 
-const allPass = tests.filter((t) => t.name !== testS1RegressionHint().name).every((t) => t.pass);
-const errorContrast = tests.find((t) => t.name.startsWith("error threshold"));
-
-console.log(JSON.stringify({
-  allPass,
-  tests,
-  errorThresholdContrast: errorContrast?.detail,
-  exampleMetrics: tests.find((t) => t.name.startsWith("600 sim"))?.detail?.metrics,
-}, null, 2));
-
-process.exit(allPass ? 0 : 1);
+const acceptance = process.argv.includes("--acceptance");
+const result = acceptance ? runAcceptance() : runQuick();
+console.log(JSON.stringify(result, null, 2));
+process.exit(result.allPass ? 0 : 1);

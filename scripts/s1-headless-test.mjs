@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /**
- * S1 headless validation: seed reproducibility, pause, 10 min long run.
- * Run: node scripts/s1-headless-test.mjs
+ * S1 headless validation.
+ * Full acceptance: node scripts/s1-headless-test.mjs --acceptance
+ * Quick (60 sim s): node scripts/s1-headless-test.mjs
+ * AI default: node scripts/run-suite.mjs --smoke
  */
 import { World } from "../site/js/world.js";
 import { loadPresetSync } from "./preset-loader.mjs";
+import { runTicks, runSimSeconds } from "./test-utils.mjs";
 
 const preset = loadPresetSync("stage0-default");
 
@@ -22,12 +25,6 @@ function hashString(str) {
     h = Math.imul(h, 16777619);
   }
   return (h >>> 0).toString(16).padStart(8, "0");
-}
-
-function runTicks(world, n) {
-  for (let i = 0; i < n; i += 1) {
-    world.tick();
-  }
 }
 
 function testSeedReproducibility() {
@@ -84,10 +81,9 @@ function testPause() {
   };
 }
 
-function testLongRun10Min() {
+function testLongRun(seconds) {
   const w = new World(preset, 42);
-  const targetSeconds = 600;
-  const targetTicks = Math.floor(targetSeconds / w.dt);
+  const targetTicks = Math.floor(seconds / w.dt);
   const maxCount = preset.particles.maxCount;
   const historyCap = Math.ceil(preset.metricsThresholds.sustainSeconds / (preset.metricsThresholds.updateEveryTicks * w.dt)) + 5;
 
@@ -103,7 +99,7 @@ function testLongRun10Min() {
 
   const m = w.metrics.formatHud();
   return {
-    name: "10 min long run (600 sim s)",
+    name: `${seconds} sim s long run`,
     pass,
     detail: {
       ticks: w.tickCount,
@@ -136,16 +132,30 @@ function testParticleCap() {
   };
 }
 
-const tests = [
-  testSeedReproducibility(),
-  testInitialSnapshotReproducibility(),
-  testPause(),
-  testParticleCap(),
-  testLongRun10Min(),
-];
+export function runAcceptance() {
+  const tests = [
+    testSeedReproducibility(),
+    testInitialSnapshotReproducibility(),
+    testPause(),
+    testParticleCap(),
+    testLongRun(600),
+  ];
+  const allPass = tests.every((t) => t.pass);
+  const longRun = tests.find((t) => t.name.includes("600"));
+  return { allPass, tests, exampleMetrics: longRun?.detail?.metrics, exampleRun: longRun?.detail };
+}
 
-const allPass = tests.every((t) => t.pass);
-const longRun = tests.find((t) => t.name.startsWith("10 min"));
+export function runQuick() {
+  const w = runSimSeconds(preset, 42, 60);
+  const tests = [
+    { name: "tick advances (60 sim s)", pass: w.tickCount > 0, detail: w.tickCount },
+    { name: "particles exist", pass: w.particles.count() > 0, detail: w.particles.count() },
+    { name: "particle cap", pass: w.particles.count() <= preset.particles.maxCount, detail: w.particles.count() },
+  ];
+  return { allPass: tests.every((t) => t.pass), tests, mode: "quick" };
+}
 
-console.log(JSON.stringify({ allPass, tests, exampleMetrics: longRun?.detail?.metrics, exampleRun: longRun?.detail }, null, 2));
-process.exit(allPass ? 0 : 1);
+const acceptance = process.argv.includes("--acceptance");
+const result = acceptance ? runAcceptance() : runQuick();
+console.log(JSON.stringify(result, null, 2));
+process.exit(result.allPass ? 0 : 1);
