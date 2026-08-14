@@ -79,16 +79,33 @@ python3 -m http.server 8080
 | `stage2-default` | 0.002 | 信息长度可维持/增长 |
 | `stage2-error-threshold` | 0.05 | 信息积累受错误阈值压制 |
 
-```bash
-node scripts/s2-headless-test.mjs
-node scripts/s3-headless-test.mjs   # stage3，须 exit 0
-```
-
 ## 测试
 
+按 [Talk 测试分层规范](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-测试分层与报告规范.md)：
+
+| 层级 | 命令 | 谁跑 |
+|------|------|------|
+| **Smoke**（AI 默认） | `node scripts/run-suite.mjs --smoke` | 每次改代码后 |
+| **Acceptance** | `node scripts/run-suite.mjs --acceptance` | CI nightly / 维护者 |
+| Quick | `node scripts/s*-headless-test.mjs` | 60 sim s 快速档 |
+
 ```bash
-node scripts/s1-headless-test.mjs   # stage0，须 exit 0
-node scripts/s2-headless-test.mjs   # stage2 + 错误阈值对照
+# AI / 日常：≤5 s 墙钟，输出可复制 Markdown 报告
+node scripts/run-suite.mjs --smoke
+
+# 科学结案：600 sim s × seeds 42/7/99（勿在 AI 对话中默认跑）
+node scripts/run-suite.mjs --acceptance
+node scripts/run-suite.mjs --acceptance --preset=stage3-default
+```
+
+PR 模板：`Smoke: exit 0（wallMs: …）` · `Acceptance: 未在 PR 中运行`
+
+### 旧入口（仍可用）
+
+```bash
+node scripts/s1-headless-test.mjs --acceptance
+node scripts/s2-headless-test.mjs --acceptance
+node scripts/s3-headless-test.mjs --acceptance
 ```
 
 ## URL 参数
@@ -118,6 +135,10 @@ site/
     ├── stage2-error-threshold.json
     └── stage3-default.json
 scripts/
+├── run-suite.mjs          # 统一入口 --smoke | --acceptance
+├── smoke-test.mjs         # Smoke 层（AI 默认）
+├── test-report.mjs        # Markdown 报告
+├── test-utils.mjs
 ├── s1-headless-test.mjs
 ├── s2-headless-test.mjs
 ├── s3-headless-test.mjs
@@ -126,6 +147,7 @@ scripts/
 
 ## 文档（Talk）
 
+- [测试分层与报告规范](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-测试分层与报告规范.md)
 - [S3 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S3-个体化与原细胞.md)
 - [S2 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S2-达尔文阈值.md)
 - [科学阶段路线图](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-科学阶段路线图.md)

@@ -1,27 +1,17 @@
 #!/usr/bin/env node
 /**
- * S3 headless validation: nucleation, capture, fission, no leaks.
- * Run: node scripts/s3-headless-test.mjs
+ * S3 headless validation.
+ * Full acceptance: node scripts/s3-headless-test.mjs --acceptance
+ * Quick (60 sim s, seed=42): node scripts/s3-headless-test.mjs
+ * AI default: node scripts/run-suite.mjs --smoke
  */
 import { World } from "../site/js/world.js";
 import { loadPresetSync } from "./preset-loader.mjs";
+import { runSimSeconds } from "./test-utils.mjs";
 
 const stage3 = loadPresetSync("stage3-default");
 const SEEDS = [42, 7, 99];
 const SIM_SECONDS = 600;
-
-function runTicks(world, n) {
-  for (let i = 0; i < n; i += 1) {
-    world.tick();
-  }
-}
-
-function runSimSeconds(preset, seed, seconds) {
-  const world = new World(preset, seed);
-  const ticks = Math.floor(seconds / world.dt);
-  runTicks(world, ticks);
-  return world;
-}
 
 function testNoScriptSpawn() {
   const w = new World(stage3, 42);
@@ -44,8 +34,8 @@ function testBareStrandsEnabled() {
   };
 }
 
-function testSeedRun(seed) {
-  const w = runSimSeconds(stage3, seed, SIM_SECONDS);
+function testSeedRun(seed, seconds) {
+  const w = runSimSeconds(stage3, seed, seconds);
   const interior = w.vesicle.interiorStrandCount(w.replicator);
   const maxV = stage3.vesicle.maxCount;
   const maxStrands = stage3.replicator.maxPopulation;
@@ -53,6 +43,7 @@ function testSeedRun(seed) {
 
   return {
     seed,
+    seconds,
     vesicles: w.vesicle.count(),
     interior,
     fissionEvents: w.metrics.fissionEvents,
@@ -77,52 +68,69 @@ function testSeedRun(seed) {
   };
 }
 
-const seedRuns = SEEDS.map((seed) => testSeedRun(seed));
+export function runAcceptance() {
+  const seedRuns = SEEDS.map((seed) => testSeedRun(seed, SIM_SECONDS));
 
-const tests = [
-  testNoScriptSpawn(),
-  testBareStrandsEnabled(),
-  ...seedRuns.flatMap((run) => [
+  const tests = [
+    testNoScriptSpawn(),
+    testBareStrandsEnabled(),
+    ...seedRuns.flatMap((run) => [
+      {
+        name: `emergent nucleation (seed=${run.seed}, ${SIM_SECONDS}s)`,
+        pass: run.checks.nucleation,
+        detail: `${run.vesicles} vesicles`,
+      },
+      {
+        name: `strand capture into interior (seed=${run.seed})`,
+        pass: run.checks.capture,
+        detail: `${run.interior} interior strands`,
+      },
+      {
+        name: `≥1 fission within ${SIM_SECONDS}s (seed=${run.seed})`,
+        pass: run.checks.fission,
+        detail: { fissionEvents: run.fissionEvents, vesicles: run.vesicles },
+      },
+      {
+        name: `encapsulationGain > 1 or interior strands (seed=${run.seed})`,
+        pass: run.checks.encapsulation,
+        detail: { encapsulationGain: run.encapsulationGain, interior: run.interior },
+      },
+      {
+        name: `no leaks / caps (seed=${run.seed})`,
+        pass: run.checks.noLeaks,
+        detail: {
+          vesicles: run.vesicles,
+          maxVesicles: stage3.vesicle.maxCount,
+          strands: run.metrics.strandCount,
+          maxStrands: stage3.replicator.maxPopulation,
+        },
+      },
+    ]),
+  ];
+
+  const allPass = tests.every((t) => t.pass);
+  return { allPass, tests, seedRuns };
+}
+
+export function runQuick() {
+  const run = testSeedRun(42, 60);
+  const tests = [
+    testNoScriptSpawn(),
     {
-      name: `emergent nucleation (seed=${run.seed}, ${SIM_SECONDS}s)`,
+      name: "emergent nucleation (seed=42, 60 sim s)",
       pass: run.checks.nucleation,
       detail: `${run.vesicles} vesicles`,
     },
     {
-      name: `strand capture into interior (seed=${run.seed})`,
-      pass: run.checks.capture,
-      detail: `${run.interior} interior strands`,
+      name: "vesicle nucleation or capture (60 sim s)",
+      pass: run.checks.nucleation || run.checks.capture,
+      detail: { vesicles: run.vesicles, interior: run.interior },
     },
-    {
-      name: `≥1 fission within ${SIM_SECONDS}s (seed=${run.seed})`,
-      pass: run.checks.fission,
-      detail: { fissionEvents: run.fissionEvents, vesicles: run.vesicles },
-    },
-    {
-      name: `encapsulationGain > 1 or interior strands (seed=${run.seed})`,
-      pass: run.checks.encapsulation,
-      detail: { encapsulationGain: run.encapsulationGain, interior: run.interior },
-    },
-    {
-      name: `no leaks / caps (seed=${run.seed})`,
-      pass: run.checks.noLeaks,
-      detail: {
-        vesicles: run.vesicles,
-        maxVesicles: stage3.vesicle.maxCount,
-        strands: run.metrics.strandCount,
-        maxStrands: stage3.replicator.maxPopulation,
-      },
-    },
-    {
-      name: `600 sim s metrics snapshot (seed=${run.seed})`,
-      pass: true,
-      detail: { metrics: run.metrics },
-    },
-  ]),
-];
+  ];
+  return { allPass: tests.every((t) => t.pass), tests, mode: "quick", seedRun: run };
+}
 
-const coreTests = tests.filter((t) => !t.name.startsWith("600 sim s"));
-const allPass = coreTests.every((t) => t.pass);
-
-console.log(JSON.stringify({ allPass, tests, seedRuns }, null, 2));
-process.exit(allPass ? 0 : 1);
+const acceptance = process.argv.includes("--acceptance");
+const result = acceptance ? runAcceptance() : runQuick();
+console.log(JSON.stringify(result, null, 2));
+process.exit(result.allPass ? 0 : 1);
