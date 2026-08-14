@@ -36,8 +36,16 @@ const PARTICLE_LEGEND_HTML = `
       <span><strong>淡绿连线 · colony 黏附</strong>（S5）— 分裂后膜泡间的弹性链接，越亮链接越强。</span>
     </li>
     <li class="ui-guide__legend-item">
+      <span class="ui-guide__swatch ui-guide__swatch--drive" aria-hidden="true"></span>
+      <span><strong>亮蓝热力·驱动</strong>（默认）— 能量<strong>梯度</strong>强度，单体沿此被拉向高能量区。</span>
+    </li>
+    <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--field" aria-hidden="true"></span>
-      <span><strong>青绿场热力图</strong>（可开关）— 底色越亮表示<strong>能量场 energy</strong>越高，粒子与复制更活跃。</span>
+      <span><strong>青绿热力·能量</strong> — 场上能量浓度（非梯度）。</span>
+    </li>
+    <li class="ui-guide__legend-item">
+      <span class="ui-guide__swatch ui-guide__swatch--waste" aria-hidden="true"></span>
+      <span><strong>紫红热力·废物</strong> — 代谢废物堆积，全体粒子阻力增大、变慢。</span>
     </li>
   </ul>
 </section>
@@ -107,7 +115,8 @@ export function particleLegendBroadcastLines(stageKey) {
     "图例：浅蓝小点=单体 monomer（最小最快）",
     "图例：金黄=catalyst 催化剂（稍大、较慢）",
     "图例：深蓝=dimer 二聚体（最大基质粒子）",
-    "图例：青绿场热力图=能量场（越亮能量越高）",
+    "图例：亮蓝热力=能量梯度驱动单体移动",
+    "图例：青绿热力=能量浓度 · 紫红=废物阻力",
   ];
   const lines = [...base];
   if (stageKey !== "s1") {

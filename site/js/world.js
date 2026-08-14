@@ -60,8 +60,24 @@ export class World {
     );
 
     this.showGrid = preset.render.showGrid;
-    this.showFieldHeatmap = true;
+    const defaultHeatmap = preset.render?.defaultFieldHeatmap ?? "energy";
+    this.fieldHeatmapMode = defaultHeatmap === "off" ? "off" : defaultHeatmap;
+    this.showFieldHeatmap = this.fieldHeatmapMode !== "off";
     this.gridStep = preset.render.gridStep;
+  }
+
+  /** Cycle field overlay: drive → energy → waste → off */
+  cycleFieldHeatmap() {
+    const order = ["drive", "energy", "waste", "off"];
+    const idx = order.indexOf(this.fieldHeatmapMode);
+    const next = order[(idx + 1) % order.length];
+    this.fieldHeatmapMode = next;
+    this.showFieldHeatmap = next !== "off";
+    return this.fieldHeatmapMode;
+  }
+
+  toggleFieldHeatmap() {
+    return this.cycleFieldHeatmap();
   }
 
   togglePause() {
@@ -72,11 +88,6 @@ export class World {
   toggleGrid() {
     this.showGrid = !this.showGrid;
     return this.showGrid;
-  }
-
-  toggleFieldHeatmap() {
-    this.showFieldHeatmap = !this.showFieldHeatmap;
-    return this.showFieldHeatmap;
   }
 
   /** Advance one fixed simulation tick. */

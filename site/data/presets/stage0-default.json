@@ -1,7 +1,7 @@
 {
   "world": {
-    "width": 4096,
-    "height": 2048,
+    "width": 1440,
+    "height": 810,
     "boundary": "wrap"
   },
   "sim": {
@@ -10,8 +10,8 @@
     "seed": 42
   },
   "fields": {
-    "width": 256,
-    "height": 128,
+    "width": 90,
+    "height": 51,
     "energy": {
       "diffusion": 0.4,
       "replenish": 0.02,
@@ -21,12 +21,12 @@
       "diffusion": 0.2,
       "decay": 0.05
     },
-    "heatmapOpacity": 0.35
+    "heatmapOpacity": 0.42
   },
   "particles": {
     "counts": {
-      "monomer": 600,
-      "catalyst": 40,
+      "monomer": 480,
+      "catalyst": 180,
       "dimer": 0
     },
     "maxCount": 4000,
@@ -59,14 +59,15 @@
     "updateEveryTicks": 10
   },
   "render": {
-    "showGrid": true,
-    "gridStep": 128,
-    "heatmapTileSize": 24
+    "showGrid": false,
+    "gridStep": 90,
+    "heatmapTileSize": 18,
+    "defaultFieldHeatmap": "drive"
   },
   "performance": {
     "fieldUpdateStride": 2,
-    "heatmapTileSize": 24,
-    "spatialCellSize": 64,
+    "heatmapTileSize": 18,
+    "spatialCellSize": 48,
     "metricsHistoryMaxSamples": 200
   }
 }

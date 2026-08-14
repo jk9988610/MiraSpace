@@ -1,4 +1,4 @@
-import { Camera } from "./camera.js";
+import { Camera, createRng } from "./camera.js";
 import { World } from "./world.js";
 import { drawSparkline } from "./sparkline.js";
 import { loadPreset } from "./preset.js";
@@ -262,8 +262,11 @@ function resizeCanvas() {
 function resetCameraCenter(cam, w) {
   cam.worldWidth = w.width;
   cam.worldHeight = w.height;
-  cam.camX = w.width / 2;
-  cam.camY = w.height / 2;
+  const rng = createRng((w.seed + 7919) >>> 0);
+  cam.camX = rng.range(0, w.width);
+  cam.camY = rng.range(0, w.height);
+  const fitZoom = Math.min(cam.viewportW / w.width, cam.viewportH / w.height) * 0.92;
+  cam.zoom = Math.max(0.85, Math.min(1.4, fitZoom));
 }
 
 function drawBackground() {
@@ -472,6 +475,7 @@ function syncControlPanelUi() {
     timeScale: simClock.timeScale,
     showGrid: world.showGrid,
     showField: world.showFieldHeatmap,
+    fieldHeatmapMode: world.fieldHeatmapMode,
   });
 }
 
@@ -503,8 +507,8 @@ function initWorld(seed, opts = {}) {
 function renderWorld(w) {
   drawBackground();
   drawGrid(camera, w);
-  if (w.showFieldHeatmap) {
-    w.fields.drawHeatmap(ctx, camera);
+  if (w.showFieldHeatmap && w.fieldHeatmapMode !== "off") {
+    w.fields.drawHeatmap(ctx, camera, w.fieldHeatmapMode);
   }
   w.particles.draw(ctx, camera);
   if (w.replicator) {
@@ -628,9 +632,15 @@ async function main() {
     },
     onFieldToggle: () => {
       if (!world) return;
-      world.toggleFieldHeatmap();
+      const mode = world.toggleFieldHeatmap();
       syncControlPanelUi();
-      logGuide(world.showFieldHeatmap ? "开启场热力图" : "关闭场热力图");
+      const labels = {
+        drive: "热力图：能量梯度驱动（单体被拉向亮区）",
+        energy: "热力图：能量场浓度",
+        waste: "热力图：废物场（越高阻力越大）",
+        off: "热力图：关闭",
+      };
+      logGuide(labels[mode] ?? "热力图切换");
     },
     onReset: () => {
       void resetCurrentRun();
