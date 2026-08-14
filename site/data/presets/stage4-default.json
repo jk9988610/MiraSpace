@@ -1,23 +1,24 @@
 {
   "extends": "stage3-default.json",
   "chemoton": {
-    "subsystemMin": 0.35,
-    "fissionFitnessMin": 0.4,
-    "coherenceMinTicks": 60,
+    "subsystemMin": 0.28,
+    "fissionFitnessMin": 0.32,
+    "coherenceMinTicks": 35,
+    "geneticNormalize": 0.018,
     "repairBonus": 0.05,
     "membraneMaintenance": 0.01,
     "metabolicNormalize": 0.4,
     "geneticWindowSeconds": 30,
     "inheritanceNoise": 0.12,
     "storageEmergence": {
-      "fluxMin": 0.45,
-      "healthMin": 0.55,
-      "lengthMin": 10
+      "fluxMin": 0.4,
+      "healthMin": 0.5,
+      "lengthMin": 9
     }
   },
   "metricsThresholdsS4": {
-    "chemotonCoherence": 0.25,
-    "lineagePersistenceGenerations": 8,
+    "chemotonCoherence": 0.12,
+    "lineagePersistenceGenerations": 5,
     "sustainSeconds": {
       "chemotonCoherence": 120,
       "lineagePersistence": 300

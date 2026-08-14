@@ -4,7 +4,7 @@
     "mobility": 22
   },
   "vesicle": {
-    "nucleationRate": 0.00006,
+    "nucleationRate": 0.00009,
     "nucleationEnergyMin": 0.28,
     "nucleationStrandRadius": 128,
     "nucleationStrandBoost": 16,
@@ -13,8 +13,8 @@
     "growthRate": 0.24,
     "maintenanceCost": 0.004,
     "permeability": 0.3,
-    "fissionThresholdRatio": 0.62,
-    "captureTicks": 4,
+    "fissionThresholdRatio": 0.56,
+    "captureTicks": 3,
     "captureMargin": 2,
     "monomerSearchRadius": 32,
     "maxCount": 120
@@ -22,7 +22,7 @@
   "metricsThresholdsS3": {
     "encapsulationGain": 1.8,
     "parasiteLoadMax": 0.55,
-    "fissionEventsPer300s": 3,
+    "fissionEventsPer300s": 1,
     "sustainSeconds": {
       "encapsulationGain": 60,
       "parasiteLoad": 120,

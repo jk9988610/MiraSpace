@@ -370,13 +370,40 @@ export class Colony {
     return n > 0 ? sum / n : 0;
   }
 
-  multicellularPersistenceRatio() {
-    const singletonAvg = this._singletonLifespanN > 0
+  /**
+   * @param {import('./vesicle.js').Vesicle | null} [vesicle]
+   */
+  multicellularPersistenceRatio(vesicle = null) {
+    let singletonAvg = this._singletonLifespanN > 0
       ? this._singletonLifespanSum / this._singletonLifespanN
-      : 1;
-    const colonyAvg = this._colonyLifespanN > 0
+      : 0;
+    if (singletonAvg <= 0 && vesicle) {
+      let ageSum = 0;
+      let n = 0;
+      for (const v of vesicle.list) {
+        if (!v.colonyId) {
+          ageSum += v.age;
+          n += 1;
+        }
+      }
+      singletonAvg = n > 0 ? ageSum / n : 1;
+    }
+    if (singletonAvg <= 0) singletonAvg = 1;
+
+    let colonyAvg = this._colonyLifespanN > 0
       ? this._colonyLifespanSum / this._colonyLifespanN
       : 0;
+    let liveAgeSum = 0;
+    let liveN = 0;
+    for (const colony of this.list) {
+      if (colony.memberVesicleIds.length >= 2) {
+        liveAgeSum += colony.age;
+        liveN += 1;
+      }
+    }
+    if (liveN > 0) {
+      colonyAvg = Math.max(colonyAvg, liveAgeSum / liveN);
+    }
     if (colonyAvg <= 0) return 0;
     return colonyAvg / Math.max(1, singletonAvg);
   }

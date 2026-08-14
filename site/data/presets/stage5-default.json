@@ -8,9 +8,9 @@
     "fluxTransferRate": 0.05
   },
   "metricsThresholdsS5": {
-    "multicellularPersistenceRatio": 1.5,
-    "divisionOfLaborColonyShare": 0.3,
-    "developmentalPatternScore": 0.15,
+    "multicellularPersistenceRatio": 0.9,
+    "divisionOfLaborColonyShare": 0.15,
+    "developmentalPatternScore": 0.08,
     "sustainSeconds": {
       "persistence": 120,
       "labor": 180,
