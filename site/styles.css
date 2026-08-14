@@ -62,6 +62,105 @@ body {
   opacity: 0.7;
 }
 
+.init-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: rgba(4, 8, 16, 0.72);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.init-picker[hidden] {
+  display: none;
+}
+
+.init-picker__dialog {
+  width: min(640px, 100%);
+  max-height: min(85vh, 520px);
+  overflow-y: auto;
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid rgba(120, 160, 200, 0.35);
+  border-radius: 14px;
+  background: rgba(10, 18, 30, 0.96);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.init-picker__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.init-picker__lead {
+  margin: 0 0 0.85rem;
+  color: #9fb3c8;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.init-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.45rem;
+}
+
+.init-picker__choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-height: 64px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(100, 140, 180, 0.3);
+  border-radius: 0.55rem;
+  background: rgba(16, 28, 44, 0.9);
+  color: #d8e4f0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.init-picker__choice:hover {
+  border-color: rgba(120, 190, 255, 0.55);
+  background: rgba(30, 60, 95, 0.55);
+}
+
+.init-picker__choice-label {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.init-picker__choice-sub {
+  font-size: 0.68rem;
+  color: #8fa3b8;
+  line-height: 1.3;
+}
+
+.init-picker__hint {
+  margin: 0.75rem 0 0;
+  color: #6d849c;
+  font-size: 0.65rem;
+}
+
+.init-picker__hint code {
+  color: #9ec8ff;
+  font-size: 0.62rem;
+}
+
+.app-shell--pending .hud,
+.app-shell--pending #control-panel,
+.app-shell--pending .top-right-ui {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .hud {
   position: fixed;
   top: calc(4.25rem + env(safe-area-inset-top));

@@ -55,13 +55,20 @@ export function tabForPreset(presetName) {
 
 /**
  * @param {URLSearchParams} params
- * @param {string} [fallbackPreset]
  */
-export function parseStageFromUrl(params, fallbackPreset = "stage0-default") {
+export function hasPresetInUrl(params) {
   const raw = params.get("preset");
-  const preset = raw ? raw.replace(/\.json$/, "") : fallbackPreset;
-  const tab = tabForPreset(preset) ?? STAGE_TABS[0];
-  return tab;
+  return raw != null && raw !== "";
+}
+
+/**
+ * @param {URLSearchParams} params
+ * @returns {StageTab | null} null when URL has no preset (await user choice)
+ */
+export function parseStageFromUrl(params) {
+  if (!hasPresetInUrl(params)) return null;
+  const preset = params.get("preset").replace(/\.json$/, "");
+  return tabForPreset(preset) ?? STAGE_TABS[0];
 }
 
 /**
@@ -142,17 +149,18 @@ export function createStageNav(container, handlers) {
     btn.innerHTML = `<span class="stage-nav__label">${tab.label}</span>`
       + `<span class="stage-nav__subtitle">${tab.subtitle}</span>`;
     btn.addEventListener("click", () => {
-      if (handlers.getActiveTab().id === tab.id) return;
+      const current = handlers.getActiveTab();
+      if (current && current.id === tab.id) return;
       void handlers.onSelect(tab);
     });
     tabsEl.appendChild(btn);
     buttons.push(btn);
   }
 
-  /** @param {StageTab} tab */
+  /** @param {StageTab | null} tab */
   function setActiveTab(tab) {
     for (const btn of buttons) {
-      const isActive = btn.dataset.stageId === tab.id;
+      const isActive = tab != null && btn.dataset.stageId === tab.id;
       btn.classList.toggle("stage-nav__tab--active", isActive);
       btn.setAttribute("aria-selected", String(isActive));
     }

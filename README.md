@@ -6,13 +6,10 @@
 
 https://jk9988610.github.io/MiraSpace/
 
-- S1 默认：`?seed=42`
-- S2 复制子：`?seed=42&preset=stage2-default`
-- S3 原细胞：`?seed=42&preset=stage3-default`
-- S4 化学子：`?seed=42&preset=stage4-default`
+打开后**先选科学阶段**（初始化弹窗），不会自动写入 `?preset=`；顶栏可随时切换。深链接示例：
+
+- S1 原始汤：`?seed=42&preset=stage0-default`
 - S5 多细胞：`?seed=42&preset=stage5-default`
-- 单页导航：顶栏 Tab 切换阶段（保留 seed，URL 同步）
-- 右下角控制：暂停 · 1×/5×/20× · 网格/场/重置（`?timeScale=` 深链接）
 
 ## 本地运行
 

@@ -15,6 +15,7 @@ import { createMilestoneToast } from "./milestone-toast.js";
 import { createMilestoneTracker } from "./milestone-tracker.js";
 import { printDataRecord } from "./data-export.js";
 import { createUiGuide, createSimObserver } from "./ui-guide.js";
+import { createInitPicker } from "./init-picker.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
@@ -22,6 +23,7 @@ const canvas = document.getElementById("world-canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 
 const portraitOverlay = document.getElementById("portrait-overlay");
+const initPickerContainer = document.getElementById("init-picker");
 const stageNavContainer = document.getElementById("stage-nav");
 const controlPanelContainer = document.getElementById("control-panel");
 const topRightUi = document.getElementById("top-right-ui");
@@ -101,8 +103,9 @@ let camera = null;
 let presetRef = null;
 let presetName = "stage0-default";
 let currentSeed = 42;
-/** @type {import('./stage-nav.js').STAGE_TABS[number]} */
-let activeTab = STAGE_TABS[0];
+/** @type {import('./stage-nav.js').STAGE_TABS[number] | null} */
+let activeTab = null;
+let stageReady = false;
 let dpr = 1;
 /** @type {ReturnType<typeof createSimClock>} */
 let simClock = createSimClock({ timeScale: 1 });
@@ -118,9 +121,12 @@ let milestoneTracker = null;
 let uiGuide = null;
 /** @type {ReturnType<typeof createSimObserver> | null} */
 let simObserver = null;
+/** @type {ReturnType<typeof createInitPicker> | null} */
+let initPicker = null;
+let frameStarted = false;
 
 function getGuideContext() {
-  if (!world) return null;
+  if (!world || !activeTab) return null;
   const m = world.metrics.formatHud();
   return {
     stageLabel: activeTab.label,
@@ -144,7 +150,7 @@ function logGuide(message) {
 }
 
 function printCurrentRecord() {
-  if (!world) return;
+  if (!world || !activeTab) return;
   printDataRecord({
     presetName,
     stageLabel: activeTab.label,
@@ -392,7 +398,12 @@ function updateHud(w) {
 }
 
 function syncUrl() {
+  if (!stageReady || !activeTab) return;
   syncStageUrl(currentSeed, presetName, simClock.timeScale);
+}
+
+function setAppPending(pending) {
+  document.body.classList.toggle("app-shell--pending", pending);
 }
 
 function syncControlPanelUi() {
@@ -451,7 +462,7 @@ function renderWorld(w) {
 function frame() {
   requestAnimationFrame(frame);
 
-  if (!world || !camera || !isLandscape()) {
+  if (!world || !camera || !isLandscape() || !stageReady) {
     return;
   }
 
@@ -461,31 +472,43 @@ function frame() {
 }
 
 /**
- * Load preset and rebuild world (no cross-stage state).
  * @param {import('./stage-nav.js').STAGE_TABS[number]} tab
- * @param {number} seed
- * @param {{ toast?: boolean }} [opts]
+ * @param {{ toast?: boolean, fromPicker?: boolean }} [opts]
  */
-async function switchStage(tab, seed, opts = {}) {
+async function startStage(tab, opts = {}) {
+  const firstStart = !stageReady;
   presetName = tab.preset;
   activeTab = tab;
-  currentSeed = seed;
+  stageReady = true;
+  setAppPending(false);
+  initPicker?.hide();
 
   presetRef = await loadPreset(presetName);
   presetRef._name = presetName;
 
-  initWorld(seed, { resetPause: true });
+  initWorld(currentSeed, { resetPause: true });
 
   applyHudVisibility(tab);
-  syncUrl();
   stageNav?.setActiveTab(tab);
+  syncUrl();
+
   if (opts.toast) {
     stageNav?.showToast(`已切换至：${tab.label}`);
   }
-  logGuide(`切换阶段：${tab.label}（${tab.preset}）`);
+  if (firstStart) {
+    logGuide(`开始阶段：${tab.label}（${tab.preset}）`);
+  } else {
+    logGuide(`切换阶段：${tab.label}（${tab.preset}）`);
+  }
+
+  if (!frameStarted) {
+    frameStarted = true;
+    requestAnimationFrame(frame);
+  }
 }
 
 async function resetCurrentRun() {
+  if (!stageReady || !activeTab) return;
   initWorld(currentSeed, { resetPause: true });
   syncUrl();
   logGuide("重置当前 run（同 preset + seed）");
@@ -493,18 +516,19 @@ async function resetCurrentRun() {
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
-  activeTab = parseStageFromUrl(params);
-  presetName = activeTab.preset;
   simClock = createSimClock({ timeScale: parseTimeScaleFromUrl(params) });
-
-  presetRef = await loadPreset(presetName);
-  presetRef._name = presetName;
-  currentSeed = parseSeedFromUrl(presetRef.sim.seed);
+  currentSeed = parseSeedFromUrl(42);
 
   stageNav = createStageNav(stageNavContainer, {
     getActiveTab: () => activeTab,
     onSelect: async (tab) => {
-      await switchStage(tab, currentSeed, { toast: true });
+      await startStage(tab, { toast: stageReady });
+    },
+  });
+
+  initPicker = createInitPicker(initPickerContainer, {
+    onSelect: async (tab) => {
+      await startStage(tab, { fromPicker: true });
     },
   });
 
@@ -564,10 +588,14 @@ async function main() {
     },
   });
 
-  initWorld(currentSeed);
-  applyHudVisibility(activeTab);
-  stageNav.setActiveTab(activeTab);
-  syncUrl();
+  const deepLinkTab = parseStageFromUrl(params);
+  if (deepLinkTab) {
+    await startStage(deepLinkTab);
+  } else {
+    stageNav.setActiveTab(null);
+    initPicker.show();
+    setAppPending(true);
+  }
 
   window.addEventListener("resize", () => {
     updateOrientationOverlay();
@@ -577,7 +605,6 @@ async function main() {
   });
 
   updateOrientationOverlay();
-  requestAnimationFrame(frame);
 }
 
 main().catch((err) => {
