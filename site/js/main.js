@@ -17,6 +17,7 @@ import { buildSnapshotNarrative, buildSnapshotText } from "./data-export.js";
 import { createSnapshotModal } from "./snapshot-modal.js";
 import { createUiGuide, createSimObserver } from "./ui-guide.js";
 import { createConditionsTree } from "./conditions-tree.js";
+import { createInitPicker } from "./init-picker.js";
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");
