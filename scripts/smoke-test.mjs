@@ -6,6 +6,11 @@
 import { loadPresetSync } from "./preset-loader.mjs";
 import { runSimSeconds, timed } from "./test-utils.mjs";
 import { buildReport } from "./test-report.mjs";
+import {
+  carbonBudgetWithinTolerance,
+  estimateCarbonPool,
+} from "../site/js/gene-flux.js";
+import { World } from "../site/js/world.js";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,6 +52,13 @@ export function runSmoke(opts = {}) {
 
     for (const [stageKey, preset] of entries) {
       const simSeconds = SIM_BY_STAGE[stageKey] ?? 15;
+      let carbonBefore = null;
+      let o2Start = null;
+      if (stageKey === "stageEarth") {
+        const w0 = new World({ ...preset, _name: "stage-earth-default" }, SEED);
+        carbonBefore = estimateCarbonPool(w0.fields, w0.vesicle);
+        o2Start = w0.fields.globalO2;
+      }
       const w = runSimSeconds(preset, SEED, simSeconds);
 
       if (stageKey === "stage0") {
@@ -108,9 +120,20 @@ export function runSmoke(opts = {}) {
         const ecology = w.fields.validateEcologyState();
         checks.push({ id: "ecologyFieldsBounded", pass: ecology.ok });
         checks.push({ id: "ecologyChannelsPresent", pass: w.fields.ecologyEnabled && w.fields.CO2 && w.fields.O2 });
+        const carbonAfter = estimateCarbonPool(w.fields, w.vesicle);
+        checks.push({
+          id: "carbonBudgetTolerance",
+          pass: carbonBefore != null && carbonBudgetWithinTolerance(carbonBefore, carbonAfter, 0.2),
+        });
+        checks.push({
+          id: "geneFluxCouplingActive",
+          pass: (w.chemoton?.geneFluxTicks ?? 0) > 0,
+        });
         metrics.globalO2 = Number(w.fields.globalO2.toFixed(4));
         metrics.globalCO2 = Number(w.fields.globalCO2.toFixed(4));
         metrics.meanCO2 = Number(w.fields._fieldMean(w.fields.CO2).toFixed(4));
+        metrics.geneFluxTicks = w.chemoton?.geneFluxTicks ?? 0;
+        metrics.globalO2Delta = Number((w.fields.globalO2 - (o2Start ?? w.fields.globalO2)).toFixed(6));
       }
     }
 
@@ -121,10 +144,15 @@ export function runSmoke(opts = {}) {
     encoding: "utf8",
     cwd: join(__dirname, ".."),
   });
+  const fluxProc = spawnSync(process.execPath, [join(__dirname, "test-gene-flux.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
 
   const checks = [
     ...result.checks,
     { id: "geneExpressionDecode", pass: (geneProc.status ?? 1) === 0 },
+    { id: "geneFluxCoupling", pass: (fluxProc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);

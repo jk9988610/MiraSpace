@@ -26,7 +26,7 @@
 | **E0** | 文档与命名 | 本文档 + 基因表达规格 + `biology-names` archetype | 文档 review |
 | **E1** | 基因表达内核 | ✅ `gene-expression.js`、解码与通量表 | `test-gene-expression.mjs`（smoke 内） |
 | **E2** | 物质场与大气 | ✅ CO₂/O₂/DOC/POC + `stage-earth-default` | smoke：`ecologyFieldsBounded` |
-| **E3** | 细胞通量耦合 | `chemoton` 调用 `applyGeneFlux`、biomass | smoke：有 vesicle 时通量写入 |
+| **E3** | 细胞通量耦合 | ✅ `gene-flux.js`、biomass、`chemoton.applyGeneFlux` | smoke：`geneFluxCoupling` + 碳预算 |
 | **E4** | 营养级与捕食 | predator 转移、6 archetype HUD | acceptance：600s O₂↑、异养出现 |
 | **E5** | 表观分工 | colony `effectiveM/T`、快照字段 | smoke：colony≥3 时分化位可见 |
 | **E6** | 剖面坐标（B） | y=海拔/深度、经度 pan、光照深度 | 视觉 + 光场随 pan 变化 |

@@ -1,4 +1,5 @@
 import { wrapCoord, wrapDelta } from "./camera.js";
+import { updateVesicleBiomass } from "./gene-flux.js";
 
 const MEMBRANE_COLOR = "rgba(120, 200, 255, 0.35)";
 const MEMBRANE_STROKE = "rgba(160, 220, 255, 0.75)";
@@ -190,6 +191,7 @@ export class Vesicle {
       v.chemoton = this.chemoton.createState(rng);
       this.chemoton.registerBirth(v, simTime);
     }
+    updateVesicleBiomass(v, this.cfg.radiusMax);
     return v;
   }
 
@@ -322,6 +324,7 @@ export class Vesicle {
       }
     }
     v.membraneEnergy -= this.cfg.maintenanceCost * 0.35 * dt;
+    updateVesicleBiomass(v, this.cfg.radiusMax);
   }
 
   /**

@@ -25,6 +25,12 @@
     "oceanEquilRate": 0.01,
     "biosphereFeedback": 0.05
   },
+  "chemoton": {
+    "geneFluxCoupling": {
+      "fluxGainK": 0.18,
+      "wasteStressK": 0.3
+    }
+  },
   "render": {
     "fieldHeatmapCycle": ["drive", "energy", "CO2", "O2", "DOC", "waste", "off"],
     "defaultFieldHeatmap": "CO2"

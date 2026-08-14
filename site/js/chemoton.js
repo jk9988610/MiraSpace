@@ -1,4 +1,5 @@
 import { wrapDelta } from "./camera.js";
+import { applyGeneFluxForVesicle } from "./gene-flux.js";
 
 /**
  * Chemoton coupling layer: metabolic + membrane + genetic subsystems on vesicle.
@@ -9,8 +10,11 @@ export class Chemoton {
    */
   constructor(preset) {
     this.cfg = preset.chemoton;
+    this.preset = preset;
     this._lineageBirth = new Map();
     this._lineageDeath = new Map();
+    this.geneFluxTicks = 0;
+    this.geneFluxO2Delta = 0;
   }
 
   /**
@@ -77,6 +81,36 @@ export class Chemoton {
     if (c.membraneHealth <= 0) {
       v._pendingLysis = true;
     }
+  }
+
+  /**
+   * Apply ecology gene flux after base metabolism (E3).
+   * @param {object} v
+   * @param {import('./fields.js').Fields} fields
+   * @param {import('./replicator.js').Replicator} replicator
+   * @param {import('./vesicle.js').Vesicle} vesicle
+   * @param {number} worldWidth
+   * @param {number} worldHeight
+   * @param {number} dt
+   */
+  applyGeneFlux(v, fields, replicator, vesicle, worldWidth, worldHeight, dt) {
+    const stats = {
+      geneFluxTicks: 0,
+      geneFluxO2Delta: 0,
+    };
+    applyGeneFluxForVesicle(
+      this.preset,
+      v,
+      fields,
+      replicator,
+      vesicle,
+      worldWidth,
+      worldHeight,
+      dt,
+      stats,
+    );
+    this.geneFluxTicks += stats.geneFluxTicks;
+    this.geneFluxO2Delta += stats.geneFluxO2Delta;
   }
 
   /**

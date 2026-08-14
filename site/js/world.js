@@ -112,6 +112,15 @@ export class World {
             this.height,
             this.replicator,
           );
+          this.chemoton.applyGeneFlux(
+            v,
+            this.fields,
+            this.replicator,
+            this.vesicle,
+            this.width,
+            this.height,
+            this.dt,
+          );
         }
       }
       replicatorEvents = this.replicator.step(
