@@ -12,9 +12,11 @@
     <div class="portrait-overlay__content">
       <h1>MiraSpace</h1>
       <p>请将设备旋转至<strong>横屏</strong>以进入模拟。</p>
-      <p class="portrait-overlay__hint">米拉空间 · S1 / S2 / S3 / S4</p>
+      <p class="portrait-overlay__hint">米拉空间 · 原始汤 → 多细胞</p>
     </div>
   </div>
+
+  <nav id="stage-nav" aria-label="科学阶段"></nav>
 
   <canvas id="world-canvas" aria-label="MiraSpace 模拟画布"></canvas>
 
@@ -43,35 +45,35 @@
       <span>粒子</span>
       <strong id="hud-particles">0</strong>
     </div>
-    <div class="hud__row hud__row--s3" id="hud-row-vesicles" hidden>
+    <div class="hud__row hud__row--s3" id="hud-row-vesicles" data-stage="s3" hidden>
       <span>Vesicle</span>
       <strong id="hud-vesicles">0</strong>
     </div>
-    <div class="hud__row hud__row--s2" id="hud-row-strands" hidden>
+    <div class="hud__row hud__row--s2" id="hud-row-strands" data-stage="s2" hidden>
       <span>Strand</span>
       <strong id="hud-strands">0</strong>
     </div>
-    <hr class="hud__divider">
-    <p class="hud__section">S1</p>
-    <div class="hud__metric">
+    <hr class="hud__divider" data-stage="s1">
+    <p class="hud__section" data-stage="s1">S1</p>
+    <div class="hud__metric" data-stage="s1">
       <span class="hud__metric-label">clusterIndex</span>
       <span id="hud-cluster" class="hud__metric-value">—</span>
       <span id="hud-cluster-avg" class="hud__metric-avg">avg —</span>
       <canvas id="spark-cluster" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
     </div>
-    <div class="hud__metric">
+    <div class="hud__metric" data-stage="s1">
       <span class="hud__metric-label">autocatalyticScore</span>
       <span id="hud-autocat" class="hud__metric-value">—</span>
       <span id="hud-autocat-avg" class="hud__metric-avg">avg —</span>
       <canvas id="spark-autocat" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
     </div>
-    <div class="hud__metric">
+    <div class="hud__metric" data-stage="s1">
       <span class="hud__metric-label">negentropyFlux</span>
       <span id="hud-negentropy" class="hud__metric-value">—</span>
       <span id="hud-negentropy-avg" class="hud__metric-avg">avg —</span>
       <canvas id="spark-negentropy" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
     </div>
-    <div id="hud-s2" hidden>
+    <div id="hud-s2" data-stage="s2" hidden>
       <hr class="hud__divider">
       <p class="hud__section">S2</p>
       <div class="hud__metric">
@@ -99,7 +101,7 @@
         <canvas id="spark-parasite" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
-    <div id="hud-s3" hidden>
+    <div id="hud-s3" data-stage="s3" hidden>
       <hr class="hud__divider">
       <p class="hud__section">S3</p>
       <div class="hud__metric">
@@ -127,7 +129,7 @@
         <canvas id="spark-vesicle-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
-    <div id="hud-s4" hidden>
+    <div id="hud-s4" data-stage="s4" hidden>
       <hr class="hud__divider">
       <p class="hud__section">S4</p>
       <div class="hud__metric">
@@ -155,7 +157,7 @@
         <canvas id="spark-chemoton-count" class="hud__sparkline" width="140" height="28" aria-hidden="true"></canvas>
       </div>
     </div>
-    <div id="hud-s5" hidden>
+    <div id="hud-s5" data-stage="s5" hidden>
       <hr class="hud__divider">
       <p class="hud__section">S5</p>
       <div class="hud__metric">

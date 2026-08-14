@@ -11,6 +11,7 @@ https://jk9988610.github.io/MiraSpace/
 - S3 原细胞：`?seed=42&preset=stage3-default`
 - S4 化学子：`?seed=42&preset=stage4-default`
 - S5 多细胞：`?seed=42&preset=stage5-default`
+- 单页导航：顶栏 Tab 切换阶段（保留 seed，URL 同步）
 
 ## 本地运行
 
@@ -34,6 +35,7 @@ python3 -m http.server 8080
 | **S3** | vesicle 膜（成核/吞入/生长/分裂）、四项 S3 指标 HUD；裸 strand 仍复制 |
 | **S4** | chemoton 三子耦合（代谢/遗传/膜）、fitness 门控分裂、四项 S4 指标 HUD |
 | **S5** | colony 分裂建链、role 涌现、flux 交换、四项 S5 指标 HUD；v1 路线图闭合 |
+| **Nav** | 单页 5 Tab（原始汤→多细胞），切换 reset 世界、HUD 指标组显隐 |
 
 ## S1 指标
 
@@ -140,6 +142,7 @@ node scripts/s3-headless-test.mjs --acceptance
 - `?preset=stage3-default` — 加载 S3 preset（extends stage2）
 - `?preset=stage4-default` — 加载 S4 preset（extends stage3，chemoton 耦合）
 - `?preset=stage5-default` — 加载 S5 preset（extends stage4，colony 链接）
+- 顶栏 Tab 切换阶段；深链接 `?seed=42&preset=stage3-default` 仍可用
 
 ## 约束
 
@@ -156,6 +159,7 @@ site/
 │   ├── vesicle.js         # S3 膜 compartment
 │   ├── chemoton.js        # S4 三子耦合
 │   ├── colony.js          # S5 colony 链接与分工
+│   ├── stage-nav.js       # 单页阶段导航 Tab
 │   ├── preset.js
 │   └── ...
 └── data/presets/
@@ -181,6 +185,8 @@ scripts/
 ## 文档（Talk）
 
 - [测试分层与报告规范](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-测试分层与报告规范.md)
+- [阶段导航 UI](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-阶段导航UI.md)
+- [v1 闭合登记](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-v1-闭合登记.md)
 - [S5 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S5-多细胞性.md)
 - [S4 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S4-整合细胞单元.md)
 - [S3 规格](https://github.com/jk9988610/Talk/blob/main/docs/07-projects/2026-08-14-MiraSpace-S3-个体化与原细胞.md)

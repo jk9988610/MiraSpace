@@ -64,7 +64,7 @@ body {
 
 .hud {
   position: fixed;
-  top: max(0.75rem, env(safe-area-inset-top));
+  top: calc(4.25rem + env(safe-area-inset-top));
   left: max(0.75rem, env(safe-area-inset-left));
   z-index: 10;
   min-width: 11.5rem;
@@ -197,6 +197,99 @@ body {
 .hud--s3,
 .hud--s4,
 .hud--s5 {
-  max-height: calc(100vh - 1.5rem);
+  max-height: calc(100vh - 5.5rem);
   overflow-y: auto;
+}
+
+.stage-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  padding: max(0.35rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+    0.35rem max(0.5rem, env(safe-area-inset-left));
+  border-bottom: 1px solid rgba(120, 160, 200, 0.22);
+  background: rgba(6, 12, 22, 0.92);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.stage-nav__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.stage-nav__tab {
+  flex: 1 1 auto;
+  min-width: 4.5rem;
+  max-width: 8rem;
+  padding: 0.35rem 0.45rem 0.4rem;
+  border: 1px solid rgba(100, 140, 180, 0.25);
+  border-radius: 0.4rem;
+  background: rgba(12, 22, 36, 0.85);
+  color: #8fa3b8;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.stage-nav__tab:hover {
+  color: #c8d8e8;
+  border-color: rgba(120, 170, 220, 0.45);
+}
+
+.stage-nav__tab--active {
+  color: #e8f4ff;
+  border-color: rgba(120, 190, 255, 0.65);
+  background: rgba(30, 70, 110, 0.55);
+  box-shadow: inset 0 -2px 0 rgba(120, 190, 255, 0.85);
+}
+
+.stage-nav__label {
+  display: block;
+  font-weight: 600;
+}
+
+.stage-nav__subtitle {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.58rem;
+  opacity: 0.75;
+}
+
+.stage-nav__toast {
+  position: absolute;
+  left: 50%;
+  bottom: 0.15rem;
+  transform: translate(-50%, 100%);
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.35rem;
+  background: rgba(20, 50, 80, 0.95);
+  border: 1px solid rgba(120, 180, 240, 0.4);
+  color: #d8e8f8;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.stage-nav__toast[hidden] {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .stage-nav__tab {
+    min-width: calc(33% - 0.35rem);
+    max-width: none;
+    font-size: 0.65rem;
+  }
+
+  .stage-nav__subtitle {
+    display: none;
+  }
 }
