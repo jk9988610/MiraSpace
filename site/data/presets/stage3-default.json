@@ -8,7 +8,7 @@
     "nucleationEnergyMin": 0.28,
     "nucleationStrandRadius": 128,
     "nucleationStrandBoost": 16,
-    "radius0": 12,
+    "radius0": 14,
     "radiusMax": 48,
     "growthRate": 0.24,
     "maintenanceCost": 0.004,

@@ -2,14 +2,16 @@
 
 米拉空间（MiraSpace）——数字生命演化 Canvas 模拟。当前里程碑：**S5 多细胞性（colony）**。
 
+**生物学命名与粒子表达**：界面与文档优先使用生物学类比称谓（酶、核酸样聚合物、原细胞膜泡等）；代码内部仍用 `monomer`、`strand` 等稳定 id。详见 [`docs/BIOLOGY_NOMENCLATURE.md`](docs/BIOLOGY_NOMENCLATURE.md) 与 `site/js/biology-names.js`。
+
 ## 在线访问
 
 https://jk9988610.github.io/MiraSpace/
 
 打开后**先选科学阶段**（初始化弹窗），不会自动写入 `?preset=`；顶栏可随时切换。深链接示例：
 
-- S1 原始汤：`?seed=42&preset=stage0-default`
-- S5 多细胞：`?seed=42&preset=stage5-default`
+- S1 前生物化学：`?seed=42&preset=stage0-default`
+- S5 多细胞生物：`?seed=42&preset=stage5-default`
 
 ## 本地运行
 
@@ -24,55 +26,57 @@ python3 -m http.server 8080
 
 ## 功能
 
-| 阶段 | 内容 |
-|------|------|
-| **P0** | Canvas、横屏、坐标系、单指平移、固定 tick、周期边界 |
-| **S1** | energy/waste 场、monomer/catalyst/dimer、三项 S1 指标 |
-| **P2** | `?seed=` 复现、60 s sparkline、场/粒子性能裁剪 |
-| **S2** | strand 复制子（成核/模板复制/突变）、四项 S2 指标 HUD |
-| **S3** | vesicle 膜（成核/吞入/生长/分裂）、四项 S3 指标 HUD；裸 strand 仍复制 |
-| **S4** | chemoton 三子耦合（代谢/遗传/膜）、fitness 门控分裂、四项 S4 指标 HUD |
-| **S5** | colony 分裂建链、role 涌现、flux 交换、四项 S5 指标 HUD；v1 路线图闭合 |
-| **Nav** | 单页 5 Tab（原始汤→多细胞），切换 reset 世界、HUD 指标组显隐 |
-| **Clock** | `sim-clock.js` tick/render 解耦；浏览器 1×/5×/20×；headless 固定 ×1 |
+| 阶段 | 生物学称谓 | 内容 |
+|------|------------|------|
+| **P0** | — | Canvas、横屏、坐标系、单指平移、固定 tick、周期边界 |
+| **S1** | 前生物化学 | energy/waste 场、代谢单体/酶/二聚体、三项 S1 指标 |
+| **P2** | — | `?seed=` 复现、60 s sparkline、场/粒子性能裁剪 |
+| **S2** | 遗传复制 | 核酸样聚合物（成核/模板复制/突变）、四项 S2 指标 HUD |
+| **S3** | 原细胞 | 原细胞膜泡（成核/吞入/生长/分裂）、四项 S3 指标；裸聚合物仍复制 |
+| **S4** | 整合细胞 | chemoton 三子耦合（代谢/遗传/膜）、fitness 门控分裂、四项 S4 指标 |
+| **S5** | 多细胞生物 | colony 分裂建链、role 涌现、flux 交换、四项 S5 指标；v1 路线图闭合 |
+| **Nav** | — | 单页 5 Tab（前生物化学→多细胞生物），切换 reset 世界、HUD 指标组显隐 |
+| **Clock** | — | `sim-clock.js` tick/render 解耦；浏览器 1×/5×/20×；headless 固定 ×1 |
+
+画布粒子为**简单圆点/圆环**（非分子动画）；S1 默认半径约 monomer 5px、酶 7px、二聚体 8px。
 
 ## S1 指标
 
-- `clusterIndex` · `autocatalyticScore` · `negentropyFlux`
+- 簇集指数 `clusterIndex` · 自催化得分 `autocatalyticScore` · 负熵通量 `negentropyFlux`
 
 ## S2 指标
 
-- `heritability` — 亲–子序列相似度（1 − d/L）
-- `selectiveSweep` — Top 谱系占比 + 适应度分化
-- `informationAccumulation` — 平均序列长度 / L₀
-- `parasiteFraction` — 短序列寄生占比（仅观测）
+- 遗传度 `heritability` — 亲–子序列相似度（1 − d/L）
+- 选择扫荡 `selectiveSweep` — Top 谱系占比 + 适应度分化
+- 信息累积 `informationAccumulation` — 平均序列长度 / L₀
+- 寄生序列占比 `parasiteFraction` — 短序列寄生占比（仅观测）
 
 门槛见 `site/data/presets/stage2-default.json` 中 `metricsThresholdsS2`。
 
 ## S3 指标
 
-- `encapsulationGain` — 膜内 strand 密度 / 外液 strand 密度
-- `parasiteLoad` — 外液裸 strand 数 / 总 strand 数
-- `fissionEvents` — 300 sim s 滚动窗内分裂次数
-- `vesicleCount` — 当前 vesicle 数（仅观测）
+- 封装增益 `encapsulationGain` — 膜内聚合物密度 / 外液密度
+- 胞外寄生负载 `parasiteLoad` — 外液裸聚合物数 / 总数
+- 细胞分裂事件 `fissionEvents` — 300 sim s 滚动窗内分裂次数
+- 原细胞数 `vesicleCount` — 当前膜泡数（仅观测）
 
 门槛见 `site/data/presets/stage3-default.json` 中 `metricsThresholdsS3`。
 
 ## S4 指标
 
-- `chemotonCoherence` — 三子同时高于阈的 vesicle 占比
-- `lineagePersistence` — 膜谱系平均存活代数
-- `storageFidelity` — redundant 存储模式保真（观测）
-- `chemotonCount` — 满足 coherence 的 vesicle 数（观测）
+- 细胞协调度 `chemotonCoherence` — 三子同时高于阈的 vesicle 占比
+- 谱系延续 `lineagePersistence` — 膜谱系平均存活代数
+- 基因组保真 `storageFidelity` — redundant 存储模式保真（观测）
+- 协调细胞数 `chemotonCount` — 满足 coherence 的 vesicle 数（观测）
 
 门槛见 `site/data/presets/stage4-default.json` 中 `metricsThresholdsS4`。
 
 ## S5 指标
 
-- `multicellularPersistence` — colony 平均寿命 / 单 cell chemoton 平均寿命
-- `divisionOfLabor` — 含 ≥2 种 role 的 colony 占比
-- `developmentalPattern` — colony 链接空间自相关 vs 随机
-- `colonyCount` — 当前 colony 数（仅观测）
+- 多细胞持续性 `multicellularPersistence` — colony 平均寿命 / 单 cell chemoton 平均寿命
+- 细胞分工 `divisionOfLabor` — 含 ≥2 种 role 的 colony 占比
+- 发育模式 `developmentalPattern` — colony 链接空间自相关 vs 随机
+- 群体数 `colonyCount` — 当前 colony 数（仅观测）
 
 门槛见 `site/data/presets/stage5-default.json` 中 `metricsThresholdsS5`。
 
@@ -91,10 +95,10 @@ python3 -m http.server 8080
 
 | 指标 | 当前 | 滑动平均 |
 |------|------|----------|
-| heritability | ~0.85+ | ~0.80+ |
-| selectiveSweep | ~0.1+ | ~0.15+ |
-| informationAccumulation | ~1.0+ | ~1.0+ |
-| parasiteFraction | 观测 | — |
+| 遗传度 | ~0.85+ | ~0.80+ |
+| 选择扫荡 | ~0.1+ | ~0.15+ |
+| 信息累积 | ~1.0+ | ~1.0+ |
+| 寄生序列占比 | 观测 | — |
 
 > 精确值随 seed 与模拟时长变化；以 headless 脚本输出为准。
 
@@ -146,21 +150,26 @@ node scripts/s3-headless-test.mjs --acceptance
 ## 约束
 
 - Vanilla JS + Canvas 2D，零构建
-- **禁止** dimer 升级 strand、脚本 spawn 复制子/vesicle/**colony**、RNA/DNA 命名
+- **简单粒子表达**：圆点/圆环/连线，不做分子动画
+- **生物学类比命名**：UI/文档用生物学称谓；代码 id 保持 `monomer`/`strand` 等（见 `biology-names.js`）
+- **禁止** dimer 升级 strand、脚本 spawn 复制子/vesicle/**colony**
 - **禁止** 按 RNA→DNA→细胞 线性排期；**禁止** 关闭裸 strand 复制
 
 ## 目录结构
 
 ```
+docs/
+├── BIOLOGY_NOMENCLATURE.md   # 粒子↔生物学映射与路线图
 site/
 ├── js/
-│   ├── replicator.js      # S2 strand
-│   ├── vesicle.js         # S3 膜 compartment
-│   ├── chemoton.js        # S4 三子耦合
-│   ├── colony.js          # S5 colony 链接与分工
-│   ├── stage-nav.js       # 单页阶段导航 Tab
-│   ├── sim-clock.js       # 时间倍率与 tick/render 解耦
-│   ├── control-panel.js   # 右下角运行控制
+│   ├── biology-names.js      # 中英文生物学显示名
+│   ├── replicator.js         # S2 strand
+│   ├── vesicle.js            # S3 膜 compartment
+│   ├── chemoton.js           # S4 三子耦合
+│   ├── colony.js             # S5 colony 链接与分工
+│   ├── stage-nav.js          # 单页阶段导航 Tab
+│   ├── sim-clock.js          # 时间倍率与 tick/render 解耦
+│   ├── control-panel.js      # 右下角运行控制
 │   ├── preset.js
 │   └── ...
 └── data/presets/
@@ -175,7 +184,7 @@ scripts/
 ├── smoke-test.mjs
 ├── s5-headless-test.mjs
 ├── s4-headless-test.mjs
-├── test-report.mjs        # Markdown 报告
+├── test-report.mjs           # Markdown 报告
 ├── test-utils.mjs
 ├── s1-headless-test.mjs
 ├── s2-headless-test.mjs

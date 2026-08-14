@@ -19,7 +19,7 @@
     "monomersRequired": 1,
     "replicationRadius": 128,
     "mobility": 6,
-    "radius": 4,
+    "radius": 6,
     "L0Min": 4,
     "L0Max": 8,
     "parasiteMaxLen": 4,

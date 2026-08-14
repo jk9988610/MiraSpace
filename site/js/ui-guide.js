@@ -2,38 +2,40 @@
  * UI guide panel: fixed overview + live feed (last 10). Non-blocking; game continues.
  */
 
+import { ENTITIES, PARTICLES } from "./biology-names.js";
+
 const PARTICLE_LEGEND_HTML = `
 <section class="ui-guide__section ui-guide__section--legend">
-  <h3 class="ui-guide__heading">画布粒子与颜色</h3>
-  <p class="ui-guide__lead">圆点<strong>越大</strong>通常表示粒子类型越大；放大观察时尺寸差异更明显。</p>
+  <h3 class="ui-guide__heading">画布粒子（生物学类比）</h3>
+  <p class="ui-guide__lead">用<strong>简单圆点</strong>表达生物实体；圆点<strong>越大</strong>表示该类型粒子越大。详见 <code>docs/BIOLOGY_NOMENCLATURE.md</code>。</p>
   <ul class="ui-guide__legend">
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--monomer" aria-hidden="true"></span>
-      <span><strong>浅蓝小点 · monomer 单体</strong>（约 3px）— 游离原料，移动最快，被催化剂附近可耦合成二聚体。</span>
+      <span><strong>浅蓝 · ${PARTICLES.monomer.zh}</strong>（${PARTICLES.monomer.en}，约 5px）— 代谢单体，趋能运动；酶附近可偶联成二聚体。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--catalyst" aria-hidden="true"></span>
-      <span><strong>金黄稍大 · catalyst 催化剂</strong>（约 4px）— 移动慢，周围催化单体配对；S2+ 附近可成核 strand。</span>
+      <span><strong>金黄 · ${PARTICLES.catalyst.zh}</strong>（${PARTICLES.catalyst.en}，约 7px）— 酶，移动慢；催化半径内两单体→二聚体；S2+ 可成核核酸样聚合物。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--dimer" aria-hidden="true"></span>
-      <span><strong>深蓝最大 · dimer 二聚体</strong>（约 5px）— 两单体结合产物，易局部富集，驱动 S1 clusterIndex。</span>
+      <span><strong>深蓝 · ${PARTICLES.dimer.zh}</strong>（${PARTICLES.dimer.en}，约 8px）— 生物大分子二聚体，可解离，局部富集。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--strand" aria-hidden="true"></span>
-      <span><strong>紫边彩芯 · strand 复制子</strong>（S2+，约 4px）— 外液裸 strand；<strong>色相按谱系 lineage</strong>区分，紫描边为遗传链。</span>
+      <span><strong>紫边彩芯 · ${ENTITIES.strand.zh}</strong>（${ENTITIES.strand.en}，S2+，约 6px）— 色相=遗传谱系（lineage）。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--vesicle" aria-hidden="true"></span>
-      <span><strong>浅蓝空心圆 · vesicle 膜泡</strong>（S3+）— 圆越大膜泡越大；内点小圆为<strong>膜内 strand</strong>。</span>
+      <span><strong>浅蓝圆环 · ${ENTITIES.vesicle.zh}</strong>（${ENTITIES.vesicle.en}，S3+）— 细胞膜泡；内点为胞内核酸样聚合物。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--chemoton" aria-hidden="true"></span>
-      <span><strong>亮蓝填充膜泡 · chemoton</strong>（S4+）— 填充越亮表示<strong>代谢 flux</strong>越高；需代谢/膜/遗传三子协调才可分裂。</span>
+      <span><strong>亮蓝填充 · ${ENTITIES.chemoton.zh}</strong>（${ENTITIES.chemoton.en}，S4+）— 代谢·膜·遗传三子协调；越亮代谢越强。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--link" aria-hidden="true"></span>
-      <span><strong>淡绿连线 · colony 黏附</strong>（S5）— 分裂后膜泡间的弹性链接，越亮链接越强。</span>
+      <span><strong>淡绿连线 · 细胞黏附</strong>（${ENTITIES.colony.en}，S5）— 分裂后细胞间弹性连接。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--drive" aria-hidden="true"></span>
@@ -64,9 +66,9 @@ const STATIC_GUIDE_HTML = `
       <line x1="48" y1="72" x2="48" y2="90" stroke="#7fd4a8" stroke-dasharray="3 2"/>
       <text x="48" y="100" text-anchor="middle" fill="#7a94ac" font-size="7">虚线=门槛</text>
       <rect x="98" y="32" width="150" height="120" rx="4" fill="rgba(20,40,60,0.35)" stroke="rgba(80,120,160,0.35)"/>
-      <circle cx="148" cy="72" r="3" fill="#7ec8e8"/>
-      <circle cx="168" cy="82" r="4" fill="#e8b44d"/>
-      <circle cx="188" cy="68" r="5" fill="#3d7ab8"/>
+      <circle cx="148" cy="72" r="4" fill="#7ec8e8"/>
+      <circle cx="168" cy="82" r="5.5" fill="#e8b44d"/>
+      <circle cx="188" cy="68" r="6.5" fill="#3d7ab8"/>
       <text x="173" y="110" text-anchor="middle" fill="#9fb8d0" font-size="9">Canvas 模拟场</text>
       <rect x="254" y="32" width="62" height="28" rx="4" fill="rgba(100,160,220,0.2)" stroke="rgba(120,180,240,0.45)"/>
       <text x="285" y="50" text-anchor="middle" fill="#c8dff8" font-size="8">弹幕</text>
@@ -88,45 +90,48 @@ ${PARTICLE_LEGEND_HTML}
 /** @type {Record<string, string[]>} */
 const STAGE_LIVE_HINTS = {
   s1: [
-    "S1：关注单体→催化剂→二聚体链路，二聚体局部富集推高 clusterIndex。",
-    "开启「场」可看到能量热点，催化剂常出现在高能量区。",
+    "前生物化学：代谢单体→酶→二聚体；局部富集推高簇集指数。",
+    "热力图可看代谢场梯度（驱动）与废物（阻力）。",
   ],
   s2: [
-    "S2：催化剂附近可出现紫边 strand（复制子），色相代表不同谱系。",
-    "strand 会吞食附近单体并模板复制，序列长度影响 informationAccumulation。",
+    "遗传复制：酶附近可成核核酸样聚合物，色相=谱系。",
+    "胞内聚合物模板复制、突变，影响信息累积指标。",
   ],
   s3: [
-    "S3：浅蓝膜泡可吞入外液 strand；膜内小点=已成功封装。",
-    "膜泡变大后可分裂；HUD fissionEvents 为 300s 窗内分裂次数。",
+    "原细胞：细胞膜泡吞入胞外核酸样聚合物；膜内小点=胞内遗传物质。",
+    "细胞分裂以事件计数记录（fissionEvents，300s 窗）。",
   ],
   s4: [
-    "S4：膜泡填充亮度 = 代谢 flux；需代谢/膜/遗传协调才达 chemotonCoherence。",
-    "只有内含 strand 的协调膜泡更容易通过 fitness 门控分裂。",
+    "整合细胞：膜泡亮度≈代谢通量；三子协调→细胞协调度。",
+    "含胞内遗传物质且协调的细胞更易分裂。",
   ],
   s5: [
-    "S5：分裂后淡绿连线 = colony 黏附；多成员可出现 feeder / replicator 分工。",
-    "观察膜泡簇是否比单泡存活更久（multicellularPersistence）。",
+    "多细胞：淡绿连线=细胞黏附；可出现营养型/复制型分工。",
+    "观察多细胞群体是否比单细胞更持久。",
   ],
 };
 
 /** @param {string} stageKey */
 export function particleLegendBroadcastLines(stageKey) {
   const base = [
-    "图例：浅蓝小点=单体 monomer（最小最快）",
-    "图例：金黄=catalyst 催化剂（稍大、较慢）",
-    "图例：深蓝=dimer 二聚体（最大基质粒子）",
-    "图例：亮蓝热力=能量梯度驱动单体移动",
-    "图例：青绿热力=能量浓度 · 紫红=废物阻力",
+    `图例：浅蓝=${PARTICLES.monomer.zh}（代谢单体）`,
+    `图例：金黄=${PARTICLES.catalyst.zh}（酶）`,
+    `图例：深蓝=${PARTICLES.dimer.zh}`,
+    "图例：亮蓝热力=代谢场梯度（趋能性）",
+    "图例：青绿热力=代谢场浓度 · 紫红=代谢废物阻力",
   ];
   const lines = [...base];
   if (stageKey !== "s1") {
-    lines.push("图例：紫边彩芯=strand 复制子（色相=谱系 lineage）");
+    lines.push(`图例：紫边=${ENTITIES.strand.zh}（谱系色相）`);
   }
   if (stageKey === "s3" || stageKey === "s4" || stageKey === "s5") {
-    lines.push("图例：浅蓝圆环=vesicle 膜泡（越大膜泡越大；内点=膜内 strand）");
+    lines.push(`图例：圆环=${ENTITIES.vesicle.zh}（内点=胞内核酸样聚合物）`);
   }
   if (stageKey === "s4" || stageKey === "s5") {
-    lines.push("图例：亮蓝填充膜泡=chemoton 代谢越强越亮");
+    lines.push(`图例：亮蓝填充=${ENTITIES.chemoton.zh}`);
+  }
+  if (stageKey === "s5") {
+    lines.push("图例：淡绿连线=细胞间黏附（多细胞群体）");
   }
   if (stageKey === "s5") {
     lines.push("图例：淡绿连线=colony 分裂后黏附链接");
@@ -191,7 +196,7 @@ export function createUiGuide(panelContainer, toggleBtn, opts) {
       <li><strong>运行</strong>：${status} · seed ${ctx.seed} · ${ctx.simTime.toFixed(1)} s · tick ${ctx.tickCount}</li>
       <li><strong>左上 HUD</strong>：${escapeHtml(ctx.hudStage)} 指标组；sparkline 虚线 = 里程碑门槛。</li>
       <li><strong>里程碑弹幕</strong>：达成时自左向右飞过画布；可在「条件」面板查看科技树进度。</li>
-      <li><strong>画布</strong>：粒子 ${ctx.particleCount}${ctx.strandCount != null ? ` · strand ${ctx.strandCount}` : ""}${ctx.vesicleCount != null ? ` · vesicle ${ctx.vesicleCount}` : ""}${ctx.colonyCount != null ? ` · colony ${ctx.colonyCount}` : ""}。</li>
+      <li><strong>画布</strong>：粒子 ${ctx.particleCount}${ctx.strandCount != null ? ` · ${ENTITIES.strand.zh} ${ctx.strandCount}` : ""}${ctx.vesicleCount != null ? ` · ${ENTITIES.vesicle.zh} ${ctx.vesicleCount}` : ""}${ctx.colonyCount != null ? ` · ${ENTITIES.colony.zh} ${ctx.colonyCount}` : ""}。</li>
     `;
   }
 
@@ -264,21 +269,21 @@ export function createSimObserver(onEvent) {
       onEvent(`粒子数 ${last.particles} → ${snap.particles}${hint}`);
     }
     if (world.replicator && last.strands != null && snap.strands !== last.strands) {
-      onEvent(`复制子 strand ${last.strands} → ${snap.strands}（外液紫边点；膜内见膜泡内小点）`);
+      onEvent(`${ENTITIES.strand.zh} ${last.strands} → ${snap.strands}（外液紫边点；膜内见膜泡内小点）`);
     }
     if (world.vesicle && last.vesicles != null && snap.vesicles !== last.vesicles) {
       const d = snap.vesicles - last.vesicles;
       const why = d > 0 ? "成核或分裂产生" : "分裂合并或溶解";
-      onEvent(`膜泡 vesicle ${last.vesicles} → ${snap.vesicles}（${why}）`);
+      onEvent(`${ENTITIES.vesicle.zh} ${last.vesicles} → ${snap.vesicles}（${why}）`);
     }
     if (world.colony && last.colonies != null && snap.colonies !== last.colonies) {
-      onEvent(`群体 colony ${last.colonies} → ${snap.colonies}（分裂建链后出现/解散）`);
+      onEvent(`${ENTITIES.colony.zh} ${last.colonies} → ${snap.colonies}（分裂建链后出现/解散）`);
     }
     if (last.fission != null && snap.fission > last.fission) {
-      onEvent(`分裂累计 ${snap.fission} 次 / 300s 窗（膜泡一分为二）`);
+      onEvent(`细胞分裂累计 ${snap.fission} 次 / 300s 窗（膜泡一分为二）`);
     }
     if (world.chemoton && last.coherence != null && snap.coherence > 0.05 && last.coherence <= 0.05) {
-      onEvent("化学子协调出现：部分膜泡三子系统同时在线（亮蓝膜泡）");
+      onEvent(`${ENTITIES.chemoton.zh}协调出现：部分膜泡三子系统同时在线（亮蓝膜泡）`);
     }
 
     last = snap;

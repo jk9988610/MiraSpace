@@ -18,6 +18,9 @@ import { createSnapshotModal } from "./snapshot-modal.js";
 import { createUiGuide, createSimObserver, particleLegendBroadcastLines } from "./ui-guide.js";
 import { createConditionsTree } from "./conditions-tree.js";
 import { createInitPicker } from "./init-picker.js";
+import { applyHudBiologyLabels } from "./biology-names.js";
+
+applyHudBiologyLabels();
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("world-canvas");

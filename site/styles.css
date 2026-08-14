@@ -235,8 +235,23 @@ body {
 
 .hud__metric-label {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
   color: #7aa2c4;
   font-size: 0.68rem;
+}
+
+.hud__metric-name {
+  color: #9eb8d4;
+  font-size: 0.72rem;
+}
+
+.hud__metric-code {
+  color: #5a7490;
+  font-size: 0.58rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .hud__metric-value {
@@ -735,29 +750,29 @@ body {
 
 .ui-guide__swatch {
   flex-shrink: 0;
-  width: 1.1rem;
-  height: 1.1rem;
-  margin-top: 0.1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.05rem;
   border-radius: 50%;
   border: 1px solid rgba(180, 210, 240, 0.35);
 }
 
 .ui-guide__swatch--monomer {
   background: #7ec8e8;
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .ui-guide__swatch--catalyst {
   background: #e8b44d;
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .ui-guide__swatch--dimer {
   background: #3d7ab8;
-  width: 1rem;
-  height: 1rem;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .ui-guide__swatch--strand {
@@ -769,8 +784,8 @@ body {
   background: rgba(120, 200, 255, 0.25);
   border: 2px solid rgba(160, 220, 255, 0.75);
   border-radius: 50%;
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .ui-guide__swatch--chemoton {
