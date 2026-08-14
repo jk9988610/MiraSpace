@@ -155,12 +155,17 @@ export function runSmoke(opts = {}) {
     encoding: "utf8",
     cwd: join(__dirname, ".."),
   });
+  const profileProc = spawnSync(process.execPath, [join(__dirname, "test-earth-profile-e6.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
 
   const checks = [
     ...result.checks,
     { id: "geneExpressionDecode", pass: (geneProc.status ?? 1) === 0 },
     { id: "geneFluxCoupling", pass: (fluxProc.status ?? 1) === 0 },
     { id: "phenotypicDifferentiation", pass: (phenoProc.status ?? 1) === 0 },
+    { id: "earthProfileCoordinates", pass: (profileProc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);

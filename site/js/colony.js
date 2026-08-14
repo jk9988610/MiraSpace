@@ -154,7 +154,8 @@ export class Colony {
 
       for (const m of members) {
         const localDOC = fields.sampleDOC(m.x, m.y);
-        const localLight = 1;
+        const exprEnv = fields.sampleExpressionEnv(m.x, m.y);
+        const localLight = exprEnv.light ?? 1;
         sumDOC += localDOC;
         sumLight += localLight;
         samples.push({ m, localDOC, localLight });

@@ -29,7 +29,7 @@
 | **E3** | 细胞通量耦合 | ✅ `gene-flux.js`、biomass、`chemoton.applyGeneFlux` | smoke：`geneFluxCoupling` + 碳预算 |
 | **E4** | 营养级与捕食 | ✅ predator、指标、里程碑、`s-earth-headless-test` | acceptance：600s O₂↑、异养、碳预算 |
 | **E5** | 表观分工 | ✅ colony `updatePhenotypes`、`test-phenotype-e5` | smoke：≥2 effectiveArchetype |
-| **E6** | 剖面坐标（B） | y=海拔/深度、经度 pan、光照深度 | 视觉 + 光场随 pan 变化 |
+| **E6** | 剖面坐标（B） | ✅ `earth-profile.js`、光场、沉积基线 | smoke：`test-earth-profile-e6` |
 | **E7** | 宏观 UX | 包络去连线、植物锚定、放大镜 | 手动 / 录屏验收 |
 | **E8** | 里程碑与 Tab | `stage-earth-default`、科技树、弹幕 | smoke 全绿 + 里程碑触发 |
 

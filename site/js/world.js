@@ -5,6 +5,7 @@ import { Replicator } from "./replicator.js";
 import { Vesicle } from "./vesicle.js";
 import { Chemoton } from "./chemoton.js";
 import { Colony } from "./colony.js";
+import { EarthProfile } from "./earth-profile.js";
 import { createRng } from "./camera.js";
 
 /**
@@ -34,6 +35,18 @@ export class World {
     this.accumulator = 0;
 
     this.fields = new Fields(preset, this.width, this.height);
+    if (preset.earthProfile) {
+      this.earthProfile = new EarthProfile(
+        preset,
+        this.width,
+        this.height,
+        this.fields.gridW,
+        this.fields.gridH,
+      );
+      this.fields.attachEarthProfile(this.earthProfile);
+    } else {
+      this.earthProfile = null;
+    }
     this.particles = new Particles(preset, this.width, this.height, this.rng);
     this.replicator = preset.replicator
       ? new Replicator(preset, this.width, this.height, this.rng)
@@ -95,6 +108,10 @@ export class World {
   tick() {
     this.tickCount += 1;
     this.simTime += this.dt;
+
+    if (this.earthProfile) {
+      this.earthProfile.setSimTime(this.simTime);
+    }
 
     this.fields.step(this.dt, this.particles);
     const particleEvents = this.particles.step(this.dt, this.fields, this.rng);

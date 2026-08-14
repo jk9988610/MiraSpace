@@ -140,7 +140,7 @@ export function applyGeneFluxForVesicle(
     ? decodeSequence(sequence, overrides)
     : decodeSequence([]);
 
-  const env = fields.sampleExpressionEnv(v.x, v.y, { light: 1 });
+  const env = fields.sampleExpressionEnv(v.x, v.y);
   const envGate = computeEnvGate(decoded, env, cfg);
   const coherenceGate = c.coherenceTicks > 0
     ? 1

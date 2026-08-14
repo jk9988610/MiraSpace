@@ -68,6 +68,17 @@ export class Fields {
     this.globalO2 = atmo.globalO2 ?? preset.fields?.O2?.baseline ?? 0.02;
     this.oceanEquilRate = atmo.oceanEquilRate ?? 0.01;
     this.atmosphereBiosphereFeedback = atmo.biosphereFeedback ?? 0.05;
+
+    /** @type {import('./earth-profile.js').EarthProfile | null} */
+    this.earthProfile = null;
+  }
+
+  /**
+   * @param {import('./earth-profile.js').EarthProfile} profile
+   */
+  attachEarthProfile(profile) {
+    this.earthProfile = profile;
+    profile.seedEcologyBaselines(this);
   }
 
   /** @param {number} wx @param {number} wy */
@@ -125,17 +136,19 @@ export class Fields {
    * @param {number} wx @param {number} wy @param {{ light?: number, isNight?: boolean, isLand?: boolean, depth?: number }} [opts]
    */
   sampleExpressionEnv(wx, wy, opts = {}) {
+    const prof = this.earthProfile?.sampleEnv(wx, wy) ?? {};
     return {
-      light: opts.light ?? 1,
+      light: opts.light ?? prof.light ?? 1,
       CO2: this.sampleCO2(wx, wy),
       O2: this.sampleO2(wx, wy),
       DOC: this.sampleDOC(wx, wy),
       POC: this.samplePOC(wx, wy),
       waste: this.sampleWaste(wx, wy),
       energy: this.sampleEnergy(wx, wy),
-      isNight: opts.isNight ?? false,
-      isLand: opts.isLand ?? false,
-      depth: opts.depth ?? 0,
+      isNight: opts.isNight ?? prof.isNight ?? false,
+      isLand: opts.isLand ?? prof.isLand ?? false,
+      depth: opts.depth ?? prof.depth ?? 0,
+      zone: prof.zone,
     };
   }
 
@@ -437,6 +450,11 @@ export class Fields {
       r = 40 + v * 40;
       g = 60 + v * 160;
       b = 200 + v * 40;
+    } else if (mode === "light" && this.earthProfile) {
+      v = this.earthProfile.sampleLight(sampleX, sampleY);
+      r = 180 + v * 75;
+      g = 150 + v * 100;
+      b = 40 + v * 30;
     } else if (this.ecologyKeys.includes(mode)) {
       v = clamp01(this.sampleEcology(mode, sampleX, sampleY));
       r = 100;

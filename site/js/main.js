@@ -529,6 +529,9 @@ function initWorld(seed, opts = {}) {
 function renderWorld(w) {
   drawBackground();
   drawGrid(camera, w);
+  if (w.earthProfile) {
+    w.earthProfile.drawZoneBands(ctx, camera);
+  }
   if (w.showFieldHeatmap && w.fieldHeatmapMode !== "off") {
     w.fields.drawHeatmap(ctx, camera, w.fieldHeatmapMode);
   }

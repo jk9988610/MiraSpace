@@ -58,8 +58,21 @@
       "globalO2": 90
     }
   },
+  "earthProfile": {
+    "bands": {
+      "sedimentTop": 0.12,
+      "oceanTop": 0.42,
+      "landTop": 0.48,
+      "biosphereTop": 0.72
+    },
+    "depthAttenuationK": 0.85,
+    "solarPhase": 0.25,
+    "solarDrift": 0.00002,
+    "sedimentDocMult": 2.8,
+    "sedimentPocMult": 3.2
+  },
   "render": {
-    "fieldHeatmapCycle": ["drive", "energy", "CO2", "O2", "DOC", "waste", "off"],
+    "fieldHeatmapCycle": ["drive", "energy", "light", "CO2", "O2", "DOC", "waste", "off"],
     "defaultFieldHeatmap": "CO2"
   }
 }
