@@ -10,7 +10,7 @@
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runSmoke } from "./smoke-test.mjs";
+import { runSmoke, runSmokeEarth } from "./smoke-test.mjs";
 import { buildReport, formatMarkdown, printReport } from "./test-report.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,16 +18,18 @@ const SCRIPTS = __dirname;
 
 function parseArgs(argv) {
   const smoke = argv.includes("--smoke");
+  const smokeEarth = argv.includes("--smoke-earth");
   const acceptance = argv.includes("--acceptance");
   const json = argv.includes("--json");
   const presetArg = argv.find((a) => a.startsWith("--preset="));
   const preset = presetArg?.split("=")[1]?.replace(/\.json$/, "");
-  return { smoke, acceptance, json, preset };
+  return { smoke, smokeEarth, acceptance, json, preset };
 }
 
 function usage() {
   console.error(`Usage:
   node scripts/run-suite.mjs --smoke [--preset=stage3-default] [--json]
+  node scripts/run-suite.mjs --smoke-earth [--json]
   node scripts/run-suite.mjs --acceptance [--preset=stage3-default|stage-earth-default] [--json]
 
 AI default: --smoke only. Do not run --acceptance unless explicitly requested.`);
@@ -121,14 +123,25 @@ function runAcceptance(opts = {}) {
 
 const args = parseArgs(process.argv.slice(2));
 
-if (!args.smoke && !args.acceptance) {
+if (!args.smoke && !args.smokeEarth && !args.acceptance) {
   usage();
   process.exit(2);
 }
 
-if (args.smoke && args.acceptance) {
-  console.error("Specify --smoke or --acceptance, not both.");
+if ((args.smoke && args.acceptance) || (args.smokeEarth && args.acceptance)) {
+  console.error("Specify --smoke, --smoke-earth, or --acceptance, not combined with acceptance.");
   process.exit(2);
+}
+
+if (args.smoke && args.smokeEarth) {
+  console.error("Specify --smoke or --smoke-earth, not both.");
+  process.exit(2);
+}
+
+if (args.smokeEarth) {
+  const report = runSmokeEarth({ preset: args.preset });
+  printReport(report, { json: args.json });
+  process.exit(report.allPass ? 0 : 1);
 }
 
 if (args.smoke) {

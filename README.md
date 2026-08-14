@@ -120,6 +120,7 @@ python3 -m http.server 8080
 | 层级 | 命令 | 谁跑 |
 |------|------|------|
 | **Smoke**（AI 默认） | `node scripts/run-suite.mjs --smoke` | 每次改代码后 |
+| **Smoke Earth** | `node scripts/run-suite.mjs --smoke-earth` | 仅米拉地球档 |
 | **Acceptance** | `node scripts/run-suite.mjs --acceptance` | CI nightly / 维护者 |
 | Quick | `node scripts/s*-headless-test.mjs` | 60 sim s 快速档 |
 

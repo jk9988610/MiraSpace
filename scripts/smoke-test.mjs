@@ -163,6 +163,10 @@ export function runSmoke(opts = {}) {
     encoding: "utf8",
     cwd: join(__dirname, ".."),
   });
+  const earthE8Proc = spawnSync(process.execPath, [join(__dirname, "test-earth-integration-e8.mjs")], {
+    encoding: "utf8",
+    cwd: join(__dirname, ".."),
+  });
 
   const checks = [
     ...result.checks,
@@ -171,6 +175,7 @@ export function runSmoke(opts = {}) {
     { id: "phenotypicDifferentiation", pass: (phenoProc.status ?? 1) === 0 },
     { id: "earthProfileCoordinates", pass: (profileProc.status ?? 1) === 0 },
     { id: "macroUxEnvelope", pass: (macroProc.status ?? 1) === 0 },
+    { id: "earthTabIntegration", pass: (earthE8Proc.status ?? 1) === 0 },
     { id: "wallClockUnder12s", pass: wallMs <= SMOKE_WALL_MS },
   ];
   const allPass = checks.every((c) => c.pass);
@@ -183,6 +188,42 @@ export function runSmoke(opts = {}) {
     wallMs,
     checks,
     metrics: result.metrics,
+    allPass,
+  });
+}
+
+/**
+ * Earth-only smoke: stage-earth preset run + earth milestone/tab scripts.
+ * @param {{ preset?: string }} [opts]
+ */
+export function runSmokeEarth(opts = {}) {
+  const earthReport = runSmoke({ preset: opts.preset ?? "stage-earth-default" });
+  const scripts = [
+    "test-earth-integration-e8.mjs",
+    "s-earth-headless-test.mjs",
+  ];
+  const scriptRuns = scripts.map((script) => {
+    const proc = spawnSync(process.execPath, [join(__dirname, script)], {
+      encoding: "utf8",
+      cwd: join(__dirname, ".."),
+    });
+    return { script, pass: (proc.status ?? 1) === 0 };
+  });
+
+  const checks = [
+    ...earthReport.checks,
+    ...scriptRuns.map((r) => ({ id: r.script.replace(".mjs", ""), pass: r.pass })),
+  ];
+  const allPass = checks.every((c) => c.pass);
+
+  return buildReport({
+    suite: "smoke-earth",
+    preset: "stage-earth-default",
+    seeds: [SEED],
+    simSeconds: SIM_BY_STAGE.stageEarth,
+    wallMs: earthReport.wallMs,
+    checks,
+    metrics: earthReport.metrics,
     allPass,
   });
 }

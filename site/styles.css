@@ -936,6 +936,14 @@ body {
   background: rgba(180, 240, 200, 0.75);
 }
 
+.ui-guide__swatch--envelope {
+  border-radius: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid rgba(160, 220, 200, 0.55);
+  background: rgba(100, 180, 160, 0.2);
+}
+
 .ui-guide__swatch--field {
   border-radius: 4px;
   width: 1.15rem;
@@ -1085,7 +1093,8 @@ body {
 .hud--wide,
 .hud--s3,
 .hud--s4,
-.hud--s5 {
+.hud--s5,
+.hud--earth {
   max-height: calc(75vh - 4.25rem - env(safe-area-inset-top));
 }
 

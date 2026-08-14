@@ -1,11 +1,14 @@
 /**
- * Single-page stage navigation: 5 tabs mapping stage0/2/3/4/5-default presets.
+ * Single-page stage navigation: 6 tabs mapping stage0/2/3/4/5 + earth presets.
  * Switch resets world (no cross-stage state); preserves seed; syncs URL.
  */
 
 import { STAGES } from "./biology-names.js";
 
-/** @typedef {{ id: string, preset: string, label: string, subtitle: string, hudStages: string[] }} StageTab */
+/** Preset aliases that map to the米拉地球 tab. */
+const EARTH_PRESET_ALIASES = new Set(["stage-earth-default", "stage-earth", "earth"]);
+
+/** @typedef {{ id: string, preset: string, label: string, subtitle: string, stageKey: string, hudStages: string[] }} StageTab */
 
 /** @type {StageTab[]} */
 export const STAGE_TABS = [
@@ -14,6 +17,7 @@ export const STAGE_TABS = [
     preset: "stage0-default",
     label: "前生物化学",
     subtitle: "代谢场 · 酶 · 二聚体",
+    stageKey: "s1",
     hudStages: ["s1"],
   },
   {
@@ -21,6 +25,7 @@ export const STAGE_TABS = [
     preset: "stage2-default",
     label: "遗传复制",
     subtitle: "核酸样聚合物 · 自然选择",
+    stageKey: "s2",
     hudStages: ["s1", "s2"],
   },
   {
@@ -28,6 +33,7 @@ export const STAGE_TABS = [
     preset: "stage3-default",
     label: "原细胞",
     subtitle: "细胞膜 · 胞质封装 · 分裂",
+    stageKey: "s3",
     hudStages: ["s1", "s2", "s3"],
   },
   {
@@ -35,6 +41,7 @@ export const STAGE_TABS = [
     preset: "stage4-default",
     label: "整合细胞",
     subtitle: "代谢·膜·遗传耦合",
+    stageKey: "s4",
     hudStages: ["s1", "s2", "s3", "s4"],
   },
   {
@@ -42,7 +49,16 @@ export const STAGE_TABS = [
     preset: "stage5-default",
     label: "多细胞生物",
     subtitle: "细胞黏附 · 分工 · 发育",
+    stageKey: "s5",
     hudStages: ["s1", "s2", "s3", "s4", "s5"],
+  },
+  {
+    id: "earth",
+    preset: "stage-earth-default",
+    label: STAGES.earth.zh,
+    subtitle: STAGES.earth.subtitle,
+    stageKey: "earth",
+    hudStages: ["s1", "s2", "s3", "s4", "s5", "earth"],
   },
 ];
 
@@ -52,7 +68,12 @@ export const STAGE_TABS = [
  */
 export function tabForPreset(presetName) {
   const normalized = presetName.replace(/\.json$/, "");
-  return STAGE_TABS.find((t) => t.preset === normalized) ?? null;
+  const direct = STAGE_TABS.find((t) => t.preset === normalized);
+  if (direct) return direct;
+  if (EARTH_PRESET_ALIASES.has(normalized)) {
+    return STAGE_TABS.find((t) => t.id === "earth") ?? null;
+  }
+  return null;
 }
 
 /**
@@ -101,8 +122,9 @@ export function applyHudVisibility(tab) {
     if (stage) el.hidden = !active.has(stage);
   }
 
-  hud.classList.remove("hud--wide", "hud--s3", "hud--s4", "hud--s5");
-  if (active.has("s5")) hud.classList.add("hud--s5");
+  hud.classList.remove("hud--wide", "hud--s3", "hud--s4", "hud--s5", "hud--earth");
+  if (active.has("earth")) hud.classList.add("hud--earth");
+  else if (active.has("s5")) hud.classList.add("hud--s5");
   else if (active.has("s4")) hud.classList.add("hud--s4");
   else if (active.has("s3")) hud.classList.add("hud--s3");
   else if (active.has("s2")) hud.classList.add("hud--wide");
@@ -115,6 +137,7 @@ export function applyHudVisibility(tab) {
     if (active.has("s3")) parts.push(STAGES.s3.zh);
     if (active.has("s4")) parts.push(STAGES.s4.zh);
     if (active.has("s5")) parts.push(STAGES.s5.zh);
+    if (active.has("earth")) parts.push(STAGES.earth.zh);
     stageLabel.textContent = parts.join(" · ") || STAGES.s1.zh;
   }
 }

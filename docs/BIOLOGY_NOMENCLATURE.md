@@ -83,10 +83,37 @@
 | 原细胞 | 原细胞 | Protocell |
 | 化学子 | 整合细胞 | Integrated cell |
 | 多细胞 | 多细胞生物 | Multicellular organism |
+| 米拉地球 | 米拉地球 | Mira Earth |
 
 ---
 
-## 8. 未来扩展（终极愿景，未实现）
+## 10. 米拉地球（生态场 E2–E8）
+
+顶栏 Tab **米拉地球**（preset `stage-earth-default`，extends S5）在 S1–S5 机制之上叠加 **物质场、基因表达通量与宏观 UX**。
+
+| 视觉 / 交互 | 代码 / 模块 | 生物学名称 |
+|-------------|-------------|------------|
+| 横向色带 | `earth-profile` zone bands | **剖面带** — 陆地 / 浅海 / 深海（y 轴五层地形） |
+| 热力·光照 | `fieldHeatmapMode: light` | **日照场** — x≈经度日照强度 |
+| 半透明轮廓 | `colony.drawEnvelope` | **多细胞宏观包络**（≥3 成员；替代 S5 黏附连线） |
+| 绿调锚定膜泡 | `macro-visual` producer | **蓝细菌样固碳菌**等生产者陆地软锚定 |
+| 放大镜弹窗 | `magnifier-modal` | **微观剖面** — 膜泡、胞内聚合物、M\|T\|R 表达条 |
+| HUD 顶行 | `hud-row-atmosphere` | **大气 O₂/CO₂**、营养级丰富度、表观分工数 |
+| 里程碑 | `EARTH_MILESTONE_CONDITIONS` | 固碳菌出现、氧上升、营养级、异养出现 |
+
+**物质场**（`fields.js`）：CO₂、O₂、DOC、POC 扩散与 clamp；`globalO2` / `globalCO2` 大气池。
+
+**基因表达**（`gene-expression.js` + `gene-flux.js`）：序列解码 archetype → 细胞通量；表观分工（colony `updatePhenotypes`）不写回序列。
+
+**营养级 archetype**（见 `biology-names.js` `ARCHETYPES`）：`cyanophyte`、`herbivore`、`predator`、分解者等。
+
+深链接示例：`?seed=42&preset=stage-earth-default`
+
+规格详见 `docs/EARTH_GENE_EXPRESSION.md`、`docs/EARTH_ECOSPHERE_ROADMAP.md`。
+
+---
+
+## 8. 未来扩展（终极愿景，部分未实现）
 
 以下用生物学语言描述路线图，**当前版本未实现**：
 
@@ -96,9 +123,10 @@
 | 剪辑、拼接 | 世界内**编辑酶**事件日志（cut/join/splice） |
 | 染色体 | 聚合物束 + 拷贝数；分裂时**分配** |
 | 有丝分裂 / 减数分裂 | 分裂算法 + 事件弹幕（无动画） |
-| 基因表达 | 区段 ON → 改 chemoton/colony 参数 |
+| 基因表达 | 区段 ON → 改 chemoton/colony 参数（米拉地球已部分实现，见 §10） |
 | 配子 / 受精 | 特化 vesicle + 基因组合并 → 受精卵 |
-| 米拉地球生态 | 基因表达 → 营养级与 CO₂/O₂ 循环（见 `docs/EARTH_*`） |
+
+米拉地球生态循环见 **§10** 与 `docs/EARTH_*`（已实现 v1）。
 
 详见对话规格；实现时将延续「简单粒子 + 信息事件」而非分子动画。
 

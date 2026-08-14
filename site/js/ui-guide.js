@@ -35,7 +35,11 @@ const PARTICLE_LEGEND_HTML = `
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--link" aria-hidden="true"></span>
-      <span><strong>淡绿连线 · 细胞黏附</strong>（${ENTITIES.colony.en}，S5）— 分裂后细胞间弹性连接。</span>
+      <span><strong>淡绿连线 · 细胞黏附</strong>（${ENTITIES.colony.en}，S5）— 分裂后细胞间弹性连接；<strong>米拉地球</strong>宏观改用半透明包络，不绘连线。</span>
+    </li>
+    <li class="ui-guide__legend-item">
+      <span class="ui-guide__swatch ui-guide__swatch--envelope" aria-hidden="true"></span>
+      <span><strong>半透明包络 · 多细胞群体</strong>（米拉地球，≥3 成员）— 宏观营养级轮廓，替代黏附连线。</span>
     </li>
     <li class="ui-guide__legend-item">
       <span class="ui-guide__swatch ui-guide__swatch--drive" aria-hidden="true"></span>
@@ -81,7 +85,7 @@ const STATIC_GUIDE_HTML = `
     <li><strong>顶栏 Tab</strong>：切换 preset，保留 seed，重置世界。</li>
     <li><strong>右下控制</strong>：暂停、倍率、网格、场、重置、说明、条件、快照。</li>
     <li><strong>里程碑弹幕</strong>：达成门槛时自左向右飞过画布，不打断操作。</li>
-    <li><strong>Canvas</strong>：单指平移可绕世界一圈（周期边界，无固定原点）；热力按钮循环 驱动/能量/废物/关。</li>
+    <li><strong>Canvas</strong>：单指平移可绕世界一圈（周期边界，无固定原点）；热力按钮循环 驱动/能量/废物/<strong>光照</strong>/关（米拉地球可用光照热力图）。</li>
   </ul>
 </section>
 ${PARTICLE_LEGEND_HTML}
@@ -109,6 +113,12 @@ const STAGE_LIVE_HINTS = {
     "多细胞：淡绿连线=细胞黏附；可出现营养型/复制型分工。",
     "观察多细胞群体是否比单细胞更持久。",
   ],
+  earth: [
+    "米拉地球：剖面带标示陆地/浅海/深海；x≈经度日照，y≈五层地形。",
+    "宏观包络替代连线；生产者（固碳菌）锚定陆地、略偏绿；热力图可切光照。",
+    "控制栏「放大镜」：点击画布查看微观（膜泡+聚合物+表达条），不暂停主循环。",
+    "HUD 顶行：大气 O₂/CO₂、营养级丰富度、表观分工 archetype 数。",
+  ],
 };
 
 /** @param {string} stageKey */
@@ -133,8 +143,10 @@ export function particleLegendBroadcastLines(stageKey) {
   if (stageKey === "s5") {
     lines.push("图例：淡绿连线=细胞间黏附（多细胞群体）");
   }
-  if (stageKey === "s5") {
-    lines.push("图例：淡绿连线=colony 分裂后黏附链接");
+  if (stageKey === "earth") {
+    lines.push("图例：半透明包络=多细胞宏观轮廓（米拉地球，无黏附连线）");
+    lines.push("图例：剖面带=陆地/浅海/深海 · 热力光照=日照场");
+    lines.push("图例：固碳菌样生产者锚定陆地、略偏绿");
   }
   const hints = STAGE_LIVE_HINTS[stageKey];
   if (hints) lines.push(...hints);

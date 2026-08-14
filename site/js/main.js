@@ -597,7 +597,7 @@ async function startStage(tab, opts = {}) {
 
   uiGuide?.broadcastStageLegend?.();
   milestoneToast?.show(`里程碑弹幕已开启 · ${tab.label}`);
-  const legendPreview = particleLegendBroadcastLines(tab.key).slice(0, 2).join(" · ");
+  const legendPreview = particleLegendBroadcastLines(tab.stageKey).slice(0, 2).join(" · ");
   milestoneToast?.show(legendPreview);
 
   if (!frameStarted) {
@@ -690,7 +690,7 @@ async function main() {
 
   uiGuide = createUiGuide(uiGuidePanel, controlPanel.btnGuide, {
     getContext: getGuideContext,
-    getStageKey: () => activeTab?.key ?? null,
+    getStageKey: () => activeTab?.stageKey ?? null,
   });
 
   conditionsTree = createConditionsTree(conditionsTreeContainer, controlPanel.btnConditions, {
